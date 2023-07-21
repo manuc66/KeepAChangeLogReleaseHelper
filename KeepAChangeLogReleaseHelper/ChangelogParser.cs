@@ -1,6 +1,6 @@
 namespace KeepAChangeLogReleaseHelper;
 
-public class ChangelogParser
+internal class ChangelogParser
 {
     public ChangelogParser()
     {
