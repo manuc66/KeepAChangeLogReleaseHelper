@@ -9,10 +9,10 @@ public class NextVersionComputer
         return ComputeVersion(currentVersion, changeSet);
     }
 
-    private static string ComputeVersion(string currentVersion, ChangeSet changeSet)
+    public static string ComputeVersion(string currentVersion, ChangeSet changeSet)
     {
         // Parse the current version
-        Version version = new Version(currentVersion);
+        Version version = new(currentVersion);
 
         // Determine the next version based on the changes
         if (changeSet.Changed.Count > 0 || changeSet.Removed.Count > 0)
