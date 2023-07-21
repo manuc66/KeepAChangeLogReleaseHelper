@@ -6,11 +6,17 @@ public class ChangelogParser
     {
     }
 
-    internal ReleaseChangeLog Parse(string changeset)
+    public ChangeSet Parse(string changeset)
     {
         // Split changeset into lines
         IEnumerable<string> lines = changeset.Split('\n').Select(line => line.Trim());
 
+        List<string> changed = new();
+        List<string> added = new();
+        List<string> removed = new();
+        List<string> deprecated = new();
+        List<string> @fixed = new();
+        List<string> security = new();
         bool hasMajor = false;
         bool hasMinor = false;
         bool hasPatch = false;
@@ -72,29 +78,48 @@ public class ChangelogParser
             {
                 if (!string.IsNullOrWhiteSpace(line))
                 {
-                    if (changedStarted || removedStarted)
+                    if (changedStarted)
                     {
+                        changed.Add(line);
                         hasMajor = true;
                     }
-
-                    if (addedStarted || deprecatedStarted)
+                    else if (removedStarted)
                     {
+                        removed.Add(line);
+                        hasMajor = true;
+                    }
+                    else if (addedStarted)
+                    {
+                        added.Add(line);
                         hasMinor = true;
                     }
-
-                    if (fixedStarted || securityStarted)
+                    else if (deprecatedStarted)
                     {
+                        deprecated.Add(line);
+                        hasMinor = true;
+                    }
+                    else if (fixedStarted)
+                    {
+                        @fixed.Add(line);
+                        hasPatch = true;
+                    }
+                    else if (securityStarted)
+                    {
+                        security.Add(line);
                         hasPatch = true;
                     }
                 }
             }
         }
 
-        return new ReleaseChangeLog()
+        return new ChangeSet()
         {
-            HasMajor = hasMajor,
-            HasMinor = hasMinor,
-            HasPatch = hasPatch,
+            Changed =  changed,
+            Removed = removed,
+            Added = added,
+            Deprecated = deprecated,
+            Fixed = @fixed,
+            Security = security
         };
     }
 }
