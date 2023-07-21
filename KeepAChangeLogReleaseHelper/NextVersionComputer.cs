@@ -1,4 +1,4 @@
-namespace KeepAChangeLogReleaseHelper.Tests;
+namespace KeepAChangeLogReleaseHelper;
 
 public class NextVersionComputer
 {
