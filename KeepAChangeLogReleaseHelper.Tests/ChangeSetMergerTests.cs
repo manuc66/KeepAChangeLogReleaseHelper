@@ -22,7 +22,7 @@ public class ChangeSetMergerTests
         - New feature 2."
         };
 
-        string mergedResult = ChangeSetMerger.Merge(changesets);
+        string mergedResult = ChangeSetMerger.Merge(changesets).ToString();
 
         Assert.That(mergedResult, Is.EqualTo(
             @"## Changed
