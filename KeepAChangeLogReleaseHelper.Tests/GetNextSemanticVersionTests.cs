@@ -172,6 +172,11 @@ public class GetNextSemanticVersionTests
                                        line.StartsWith("## Deprecated", StringComparison.OrdinalIgnoreCase));
         bool patch = lines.Any(line => line.StartsWith("## Fixed", StringComparison.OrdinalIgnoreCase) || line.StartsWith("## Security", StringComparison.OrdinalIgnoreCase));
 
+        return ComputeVersion(currentVersion, major, minor, patch);
+    }
+
+    private static string ComputeVersion(string currentVersion, bool major, bool minor, bool patch)
+    {
         // Parse the current version
         Version version = new Version(currentVersion);
 
