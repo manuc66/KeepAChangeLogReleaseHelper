@@ -68,15 +68,6 @@ public class ChangelogParser
                 fixedStarted = false;
                 securityStarted = true;
             }
-            else if (line.StartsWith("## ", StringComparison.OrdinalIgnoreCase))
-            {
-                changedStarted = false;
-                addedStarted = false;
-                removedStarted = false;
-                deprecatedStarted = false;
-                fixedStarted = false;
-                securityStarted = false;
-            }
             else
             {
                 if (!string.IsNullOrWhiteSpace(line))
