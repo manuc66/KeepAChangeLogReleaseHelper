@@ -5,7 +5,6 @@ public class ChangeLog
     private readonly string _content;
     private string? _lastVersion = null;
     
-    
     public string LastVersion
     {
         get {
@@ -80,7 +79,7 @@ public class ChangeLog
 
         List<string> beforeUnreleased = lines.TakeWhile(x => !x.StartsWith("## [Unreleased]") && !x.StartsWith("## [")).ToList();
 
-        if (lines[beforeUnreleased.Count].StartsWith("## [Unreleased]"))
+        if (lines.Length > beforeUnreleased.Count && lines[beforeUnreleased.Count].StartsWith("## [Unreleased]"))
         {
             afterUnreleased = lines.Skip(beforeUnreleased.Count + 1)
                 .SkipWhile(x => !x.StartsWith("## ")).ToList(); 
