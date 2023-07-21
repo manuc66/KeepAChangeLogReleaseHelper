@@ -8,18 +8,49 @@ public class GetNextSemanticVersionTests
     }
 
     [Test]
-    public void ItComputeAMajorFromChanged()
+    public void ItComputeAMinorIfOnlyChangedIsEmpty()
     {
         string changeset = @"
-        - Improved existing feature 1.
+        ## Added
+        - New feature 1.
+        - New feature 2.
 
+        ## Changed
+
+        ## Deprecated
+        - Deprecated feature 1.
+
+        ## Removed
+        - Removed feature 2.
+
+        ## Fixed
+        - Bug fix 1.
+        - Bug fix 2.
+
+        ## Security
+        - Security update 1.
+        
         ";
 
         string nextVersion = GetNextSemanticVersion(changeset, "1.0.0");
 
         Assert.That(nextVersion, Is.EqualTo("1.1.0"));
     }
-    
+
+    [Test]
+    public void ItComputeAMajorFromChanged()
+    {
+        string changeset = @"
+        ## Changed
+        - Improved existing feature 1.
+
+        ";
+
+        string nextVersion = GetNextSemanticVersion(changeset, "1.0.0");
+
+        Assert.That(nextVersion, Is.EqualTo("2.0.0"));
+    }
+
     [Test]
     public void ItComputeAMinorFromAdded()
     {
@@ -110,10 +141,33 @@ public class GetNextSemanticVersionTests
     static string GetNextSemanticVersion(string changeset, string currentVersion)
     {
         // Split changeset into lines
-        var lines = changeset.Split('\n').Select(line => line.Trim());
+        IEnumerable<string> lines = changeset.Split('\n').Select(line => line.Trim());
+
+        bool major = false;
+        bool majorStarted = false;
+        foreach (string line in lines)
+        {
+            if (line.StartsWith("## Changed", StringComparison.OrdinalIgnoreCase))
+            {
+                majorStarted = true;
+            }
+            else if (line.StartsWith("## ", StringComparison.OrdinalIgnoreCase))
+            {
+                majorStarted = false;
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    if (majorStarted)
+                    {
+                        major = true;
+                    }
+                }
+            }
+        }
 
         // Check for changes in each category
-        bool major = lines.Any(line => line.StartsWith("## Changed", StringComparison.OrdinalIgnoreCase));
         bool minor = lines.Any(line => line.StartsWith("## Added", StringComparison.OrdinalIgnoreCase) || line.StartsWith("## Removed", StringComparison.OrdinalIgnoreCase) ||
                                        line.StartsWith("## Deprecated", StringComparison.OrdinalIgnoreCase));
         bool patch = lines.Any(line => line.StartsWith("## Fixed", StringComparison.OrdinalIgnoreCase) || line.StartsWith("## Security", StringComparison.OrdinalIgnoreCase));
