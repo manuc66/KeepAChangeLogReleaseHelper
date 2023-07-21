@@ -37,7 +37,7 @@ public class GetNextSemanticVersionTests
     }
 
     [Test]
-    public void ItComputeAMinorFromRemoved()
+    public void ItComputeAMajorrFromRemoved()
     {
         string changeset = @"
 
@@ -47,7 +47,7 @@ public class GetNextSemanticVersionTests
 
         string nextVersion = GetNextSemanticVersion(changeset, "1.0.0");
 
-        Assert.That(nextVersion, Is.EqualTo("1.1.0"));
+        Assert.That(nextVersion, Is.EqualTo("2.0.0"));
     }
 
     [Test]
@@ -110,7 +110,7 @@ public class GetNextSemanticVersionTests
     
 
     [Test]
-    public void ItComputeAMinorIfOnlyChangedIsEmpty()
+    public void ItComputeAMinorIfChangedANdRemovedAreEmpty()
     {
         string changeset = @"
         ## Added
@@ -123,7 +123,6 @@ public class GetNextSemanticVersionTests
         - Deprecated feature 1.
 
         ## Removed
-        - Removed feature 2.
 
         ## Fixed
         - Bug fix 1.
@@ -289,11 +288,11 @@ public class GetNextSemanticVersionTests
             {
                 if (!string.IsNullOrWhiteSpace(line))
                 {
-                    if (changedStarted)
+                    if (changedStarted || removedStarted)
                     {
                         major = true;
                     }
-                    if (addedStarted || removedStarted || deprecatedStarted)
+                    if (addedStarted || deprecatedStarted)
                     {
                         minor = true;
                     }
