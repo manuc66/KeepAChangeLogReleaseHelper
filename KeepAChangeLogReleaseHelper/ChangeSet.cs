@@ -4,9 +4,6 @@ namespace KeepAChangeLogReleaseHelper;
 
 internal class ChangeSet
 {
-    public bool HasMinor => Added.Count > 0 || Deprecated.Count > 0;
-    public bool HasMajor => Changed.Count > 0 || Removed.Count > 0;
-    public bool HasPatch => Fixed.Count > 0 || Security.Count > 0;
     public List<string> Changed { get; init; } = new();
     public List<string> Removed { get; init; } = new();
     public List<string> Added { get; init; } = new();

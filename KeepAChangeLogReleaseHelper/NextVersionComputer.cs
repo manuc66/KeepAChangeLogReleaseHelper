@@ -15,15 +15,15 @@ public class NextVersionComputer
         Version version = new Version(currentVersion);
 
         // Determine the next version based on the changes
-        if (changeSet.HasMajor)
+        if (changeSet.Changed.Count > 0 || changeSet.Removed.Count > 0)
         {
             version = new Version(version.Major + 1, 0, 0);
         }
-        else if (changeSet.HasMinor)
+        else if (changeSet.Added.Count > 0 || changeSet.Deprecated.Count > 0)
         {
             version = new Version(version.Major, version.Minor + 1, 0);
         }
-        else if (changeSet.HasPatch)
+        else if (changeSet.Fixed.Count > 0 || changeSet.Security.Count > 0)
         {
             version = new Version(version.Major, version.Minor, version.Build + 1);
         }
