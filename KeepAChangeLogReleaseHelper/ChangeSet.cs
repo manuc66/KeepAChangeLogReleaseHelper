@@ -2,7 +2,7 @@ using System.Text;
 
 namespace KeepAChangeLogReleaseHelper;
 
-internal class ChangeSet
+public class ChangeSet
 {
     public List<string> Changed { get; init; } = new();
     public List<string> Removed { get; init; } = new();
@@ -28,17 +28,33 @@ internal class ChangeSet
     {
         StringBuilder sb = new();
 
-        AddSection(sb, nameof(Changed), Changed);
-        AddSection(sb, nameof(Removed), Removed);
-        AddSection(sb, nameof(Added), Added);
-        AddSection(sb, nameof(Deprecated), Deprecated);
-        AddSection(sb, nameof(Fixed), Fixed);
-        AddSection(sb, nameof(Security), Security);
+        string level = "##";
+        AddSection(sb, nameof(Changed), Changed, level);
+        AddSection(sb, nameof(Removed), Removed, level);
+        AddSection(sb, nameof(Added), Added, level);
+        AddSection(sb, nameof(Deprecated), Deprecated, level);
+        AddSection(sb, nameof(Fixed), Fixed, level);
+        AddSection(sb, nameof(Security), Security, level);
 
         return sb.ToString();
     }
 
-    private void AddSection(StringBuilder sb, string name, List<string> items)
+    public string ToChangelogString()
+    {
+        StringBuilder sb = new();
+
+        string level = "###";
+        AddSection(sb, nameof(Changed), Changed, level);
+        AddSection(sb, nameof(Removed), Removed, level);
+        AddSection(sb, nameof(Added), Added, level);
+        AddSection(sb, nameof(Deprecated), Deprecated, level);
+        AddSection(sb, nameof(Fixed), Fixed, level);
+        AddSection(sb, nameof(Security), Security, level);
+
+        return sb.ToString();
+    }
+
+    private void AddSection(StringBuilder sb, string name, List<string> items, string level)
     {
         if (items.Count <= 0) return;
 
@@ -47,7 +63,7 @@ internal class ChangeSet
             sb.AppendLine();
         }
 
-        sb.AppendLine($"## {name}");
+        sb.AppendLine($"{level} {name}");
         items.ForEach(x => sb.AppendLine(x));
     }
 }

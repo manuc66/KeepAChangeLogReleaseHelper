@@ -9,7 +9,7 @@ internal class ChangelogParser
     public ChangeSet Parse(string changeset)
     {
         // Split changeset into lines
-        IEnumerable<string> lines = changeset.Split('\n').Select(line => line.Trim());
+        IEnumerable<string> lines = changeset.Split(Environment.NewLine).Select(line => line.Trim());
 
         List<string> changed = new();
         List<string> added = new();
@@ -17,9 +17,6 @@ internal class ChangelogParser
         List<string> deprecated = new();
         List<string> @fixed = new();
         List<string> security = new();
-        bool hasMajor = false;
-        bool hasMinor = false;
-        bool hasPatch = false;
         bool changedStarted = false;
         bool addedStarted = false;
         bool removedStarted = false;
@@ -81,32 +78,26 @@ internal class ChangelogParser
                     if (changedStarted)
                     {
                         changed.Add(line);
-                        hasMajor = true;
                     }
                     else if (removedStarted)
                     {
                         removed.Add(line);
-                        hasMajor = true;
                     }
                     else if (addedStarted)
                     {
                         added.Add(line);
-                        hasMinor = true;
                     }
                     else if (deprecatedStarted)
                     {
                         deprecated.Add(line);
-                        hasMinor = true;
                     }
                     else if (fixedStarted)
                     {
                         @fixed.Add(line);
-                        hasPatch = true;
                     }
                     else if (securityStarted)
                     {
                         security.Add(line);
-                        hasPatch = true;
                     }
                 }
             }
