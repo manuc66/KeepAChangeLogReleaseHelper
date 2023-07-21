@@ -2,7 +2,7 @@ using System.Text;
 
 namespace KeepAChangeLogReleaseHelper;
 
-public class ChangeSet
+internal class ChangeSet
 {
     public bool HasMinor => Added.Count > 0 || Deprecated.Count > 0;
     public bool HasMajor => Changed.Count > 0 || Removed.Count > 0;
