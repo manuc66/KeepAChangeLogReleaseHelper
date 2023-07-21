@@ -107,7 +107,7 @@ public class GetNextSemanticVersionTests
 
         Assert.That(nextVersion, Is.EqualTo("2.0.0"));
     }
-    
+
 
     [Test]
     public void ItComputeAMinorIfChangedANdRemovedAreEmpty()
@@ -213,115 +213,143 @@ public class GetNextSemanticVersionTests
         Assert.That(nextVersion, Is.EqualTo("1.0.1"));
     }
 
-    static string GetNextSemanticVersion(string changeset, string currentVersion)
+    class ReleaseChangeLog
     {
-        // Split changeset into lines
-        IEnumerable<string> lines = changeset.Split('\n').Select(line => line.Trim());
+        public bool HasMinor { get; set; }
+        public bool HasMajor { get; set; }
+        public bool HasPatch { get; set; }
+    }
 
-        bool major = false;
-        bool minor = false;
-        bool patch = false;
-        bool changedStarted = false;
-        bool addedStarted = false;
-        bool removedStarted = false;
-        bool deprecatedStarted = false;
-        bool fixedStarted = false;
-        bool securityStarted = false;
-        foreach (string line in lines)
+    class ChangelogParser
+    {
+        public ChangelogParser()
         {
-            if (line.StartsWith("## Changed", StringComparison.OrdinalIgnoreCase))
+        }
+
+        internal ReleaseChangeLog Parse(string changeset)
+        {
+            // Split changeset into lines
+            IEnumerable<string> lines = changeset.Split('\n').Select(line => line.Trim());
+
+            bool hasMajor = false;
+            bool hasMinor = false;
+            bool hasPatch = false;
+            bool changedStarted = false;
+            bool addedStarted = false;
+            bool removedStarted = false;
+            bool deprecatedStarted = false;
+            bool fixedStarted = false;
+            bool securityStarted = false;
+            foreach (string line in lines)
             {
-                changedStarted = true;
-                addedStarted = false;
-                removedStarted = false;
-                deprecatedStarted = false;
-            }
-            else if (line.StartsWith("## Added", StringComparison.OrdinalIgnoreCase))
-            {
-                changedStarted = false;
-                addedStarted = true;
-                removedStarted = false;
-                deprecatedStarted = false;
-            }
-            else if (line.StartsWith("## Removed", StringComparison.OrdinalIgnoreCase))
-            {
-                changedStarted = false;
-                addedStarted = false;
-                removedStarted = true;
-                deprecatedStarted = false;
-            }
-            else if (line.StartsWith("## Deprecated", StringComparison.OrdinalIgnoreCase))
-            {
-                changedStarted = false;
-                addedStarted = false;
-                removedStarted = false;
-                deprecatedStarted = true;
-            }
-            else if (line.StartsWith("## Fixed", StringComparison.OrdinalIgnoreCase))
-            {
-                changedStarted = false;
-                addedStarted = false;
-                removedStarted = false;
-                deprecatedStarted = false;
-                fixedStarted = true;
-                securityStarted = false;
-            }
-            else if (line.StartsWith("## Security", StringComparison.OrdinalIgnoreCase))
-            {
-                changedStarted = false;
-                addedStarted = false;
-                removedStarted = false;
-                deprecatedStarted = false;
-                fixedStarted = false;
-                securityStarted = true;
-            }
-            else if (line.StartsWith("## ", StringComparison.OrdinalIgnoreCase))
-            {
-                changedStarted = false;
-                addedStarted = false;
-                removedStarted = false;
-                deprecatedStarted = false;
-                fixedStarted = false;
-                securityStarted = false;
-            }
-            else
-            {
-                if (!string.IsNullOrWhiteSpace(line))
+                if (line.StartsWith("## Changed", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (changedStarted || removedStarted)
+                    changedStarted = true;
+                    addedStarted = false;
+                    removedStarted = false;
+                    deprecatedStarted = false;
+                }
+                else if (line.StartsWith("## Added", StringComparison.OrdinalIgnoreCase))
+                {
+                    changedStarted = false;
+                    addedStarted = true;
+                    removedStarted = false;
+                    deprecatedStarted = false;
+                }
+                else if (line.StartsWith("## Removed", StringComparison.OrdinalIgnoreCase))
+                {
+                    changedStarted = false;
+                    addedStarted = false;
+                    removedStarted = true;
+                    deprecatedStarted = false;
+                }
+                else if (line.StartsWith("## Deprecated", StringComparison.OrdinalIgnoreCase))
+                {
+                    changedStarted = false;
+                    addedStarted = false;
+                    removedStarted = false;
+                    deprecatedStarted = true;
+                }
+                else if (line.StartsWith("## Fixed", StringComparison.OrdinalIgnoreCase))
+                {
+                    changedStarted = false;
+                    addedStarted = false;
+                    removedStarted = false;
+                    deprecatedStarted = false;
+                    fixedStarted = true;
+                    securityStarted = false;
+                }
+                else if (line.StartsWith("## Security", StringComparison.OrdinalIgnoreCase))
+                {
+                    changedStarted = false;
+                    addedStarted = false;
+                    removedStarted = false;
+                    deprecatedStarted = false;
+                    fixedStarted = false;
+                    securityStarted = true;
+                }
+                else if (line.StartsWith("## ", StringComparison.OrdinalIgnoreCase))
+                {
+                    changedStarted = false;
+                    addedStarted = false;
+                    removedStarted = false;
+                    deprecatedStarted = false;
+                    fixedStarted = false;
+                    securityStarted = false;
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(line))
                     {
-                        major = true;
-                    }
-                    if (addedStarted || deprecatedStarted)
-                    {
-                        minor = true;
-                    }
-                    if (fixedStarted || securityStarted)
-                    {
-                        patch = true;
+                        if (changedStarted || removedStarted)
+                        {
+                            hasMajor = true;
+                        }
+
+                        if (addedStarted || deprecatedStarted)
+                        {
+                            hasMinor = true;
+                        }
+
+                        if (fixedStarted || securityStarted)
+                        {
+                            hasPatch = true;
+                        }
                     }
                 }
             }
+
+            return new ReleaseChangeLog()
+            {
+                HasMajor = hasMajor,
+                HasMinor = hasMinor,
+                HasPatch = hasPatch,
+            };
         }
-        
-        return ComputeVersion(currentVersion, major, minor, patch);
     }
 
-    private static string ComputeVersion(string currentVersion, bool major, bool minor, bool patch)
+    static string GetNextSemanticVersion(string changeset, string currentVersion)
+    {
+        ReleaseChangeLog releaseChangeLog = new ChangelogParser().Parse(changeset);
+
+        return ComputeVersion(currentVersion, releaseChangeLog);
+    }
+
+    private static string ComputeVersion(string currentVersion, ReleaseChangeLog releaseChangeLog)
     {
         // Parse the current version
         Version version = new Version(currentVersion);
 
         // Determine the next version based on the changes
-        if (major)
+        if (releaseChangeLog.HasMajor)
         {
             version = new Version(version.Major + 1, 0, 0);
         }
-        else if (minor)
+        else if (releaseChangeLog.HasMinor)
         {
             version = new Version(version.Major, version.Minor + 1, 0);
         }
-        else if (patch)
+        else if (releaseChangeLog.HasPatch)
         {
             version = new Version(version.Major, version.Minor, version.Build + 1);
         }
