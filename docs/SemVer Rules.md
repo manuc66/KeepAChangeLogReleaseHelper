@@ -5,11 +5,13 @@ To avoid the pitfalls of using *Keep a Changelog* categories directly for SemVer
 | Fragment Section | SemVer Impact | Description / Discipline |
 | :--- | :--- | :--- |
 | `### Breaking Changes` | ⬆️ **Major** | Explicit breaking changes. Kept as a separate section in the fragment and compiled into the final release notes for clear visibility. |
-| `### Removed` | ⬆️ **Major** | Removing a documented public feature is a breaking change. *Note: Internal removals should be kept out of the public changelog.* |
-| `### Changed` | ➡️ **Minor** | Modifications to existing features that do not break backward compatibility. |
+| `### Removed` | ⬆️ **Major** | Removing a documented public feature is a breaking change. |
+| `### Changed` | ⬆️ **Major** | Modifications to existing features. **Note**: By default, ChangeSharp treats "Changed" as a Major bump to be conservative. This can be overridden to "Minor" in `changesharp.json`. |
 | `### Added` | ➡️ **Minor** | New backward-compatible features. |
 | `### Deprecated` | ➡️ **Minor** | Warnings about future removals. |
 | `### Fixed` | 🛞 **Patch** | Bug fixes. |
 | `### Security` | 🛞 **Patch** | Security improvements. |
 
-This ensures that developers get zero-configuration version derivation while maintaining high trust in version numbers.
+## Customization
+
+You can override these default mappings in your `changesharp.json` configuration file to better suit your project's versioning policy. For example, if you follow a more relaxed SemVer approach where "Changed" is always backward-compatible, you can map it to `Minor`.

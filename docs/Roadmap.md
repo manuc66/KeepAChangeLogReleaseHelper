@@ -1,28 +1,31 @@
 # Roadmap to Production
 
-To build a reliable MVP, we will prioritize robust parsing and extensible configuration:
+To build a reliable MVP, we will prioritize robust parsing, extensible configuration, and developer experience.
 
-### Step 1: Create the CLI (.NET Tool)
+### Step 1: Create the CLI (.NET Tool) & Error Contract
 * Initialize `ChangeSharp.Cli` as a console application configured as a packable tool (`<PackAsTool>true</PackAsTool>`).
-* Set up command handling with `System.CommandLine` (e.g., `init`, `new`, `status`, `release`).
+* Set up command handling with `System.CommandLine`.
+* **Define Exit Codes Contract**: Establish stable exit codes (e.g., `0` for success, `1` for generic error, `2` for no changes to release). This is critical for CI/CD integration.
+* See [[ExitCodes|Exit Codes Specification]].
 
 ### Step 2: Integrate Markdig (Early Parsing Layer)
 * Replace the manual line-by-line parser with **Markdig**.
 * This guarantees correct handling of rich Markdown elements (nested lists, code blocks, bold text) inside fragment sections right from the start, avoiding complex edge-case bug fixing later.
 
-### Step 3: Fragment Lifecycle Management (Workflow)
+### Step 3: Fragment Lifecycle & UX (Workflow)
 * **Initialize** (`changesharp init`): Sets up the configuration file and the `.changesharp/unreleased/` directory.
-* **New Fragment** (`changesharp new "add-feature"`): Generates a timestamped markdown template.
+* **Status** (`changesharp status`): Lists pending fragments, previews the calculated version bump, and shows config state. This feeds into `--dry-run` and MCP integration.
+* **New Fragment** (`changesharp new`): 
+    * Support interactive prompts for message and category (high-priority UX).
+    * **Naming Strategy**: Implement a deterministic naming convention (e.g., `YYYYMMDD-slug.md`) to ensure sorting and avoid collisions. See [[FragmentNaming|Fragment Naming Strategy]].
 * **Release** (`changesharp release`):
-  1. Aggregates all fragments from the unreleased directory.
-  2. Derives the new version.
-  3. Updates `CHANGELOG.md`.
-  4. Archives/cleans up the consumed fragments.
+    * **Idempotence**: Implement a transaction-like strategy or state detection to handle crashes mid-release (e.g., after updating CHANGELOG but before archiving fragments).
+    * Aggregate fragments, derive version, update targets, and archive consumed fragments.
 
-### Step 4: Extensible Version Propagation (Completed)
-* Avoid complex, hardcoded C# logic to update project files directly.
-* Introduce an extensible configuration schema (e.g., in `changesharp.json`).
-* Provide standard target handlers (MSBuild, JSON, text/regex) to safely propagate the derived version.
+### Step 4: Config, Propagation & SemVer Policy
+* Provide standard target handlers (MSBuild, JSON, text/regex) via `changesharp.json`.
+* **SemVer Mapping**: Document and allow override of the `Changed` → `Major` policy. By default, "Changed" triggers a Major bump, but this must be configurable.
+* **Principle**: Step 4 ensures the tool is extensible via configuration rather than hardcoded logic.
 
 ### Step 5: Dry-run Mode (Completed)
 * Add `--dry-run` support to the `release` command.
@@ -34,43 +37,35 @@ To build a reliable MVP, we will prioritize robust parsing and extensible config
 ### Step 7: Pre-release Channels and Branch-based Versioning (Completed)
 * See detailed specification: [[Features/Prereleases|Pre-release Feature]]
 
-### Step 8: Interactive 'new' Command
-* Enhance the `new` command to prompt for a message and category if they are not provided via arguments.
-* Improve developer experience by making fragment creation as frictionless as possible.
-
-### Step 9: Smart Init (Auto-discovery)
+### Step 8: Smart Init (Auto-discovery)
 * Enhance the `init` command to scan the workspace for common project files (e.g., `.csproj`, `package.json`, `Directory.Build.props`).
 * Automatically suggest and add these as `VersionTargets` in `changesharp.json`.
 
-### Step 10: Fragment Validation and Linting
+### Step 9: Fragment Validation and Linting
 * Add a `lint` or `validate` command to check if unreleased fragments follow the expected Markdown structure.
-* Ensure all fragments use recognized categories to avoid SemVer calculation errors.
+* This must precede custom category support to ensure the validation engine is extensible.
 
-### Step 11: Custom Categories and Mappings
+### Step 10: Custom Categories and Mappings
 * Allow users to define custom changelog categories in `changesharp.json`.
 * Enable mapping these custom categories to specific SemVer impacts (Major, Minor, or Patch).
 
-### Step 12: AI Automation Layer (CLI + MCP)
+### Step 11: AI Automation Layer (CLI + MCP)
 
 #### Goal
-
 Make ChangeSharp fully automation-ready for CI/CD systems and AI agents without adding complexity to the core system.
 
 ---
 
 #### Approach
-
 ChangeSharp uses a **two-layer automation model**:
 
 **1. CLI (primary interface)**
-
 * JSON-first output (`--json`)
 * deterministic, machine-readable results
 * used by CI/CD and scripts
 * contains all business logic via the core library
 
 **2. MCP (AI adapter layer)**
-
 * lightweight STDIO-based MCP server
 * no business logic duplication
 * acts as a thin wrapper over the CLI or core library
@@ -79,27 +74,22 @@ ChangeSharp uses a **two-layer automation model**:
 ---
 
 #### Architecture
-
 ```
 ChangeSharp.Core   → business logic
         ↑
-ChangeSharp.CLI    → JSON-first automation interface
+ChangeSharp.CLI    → JSON-first automation interface (Source of Truth)
         ↑
-ChangeSharp.MCP    → AI/tooling adapter (STDIO)
+ChangeSharp.MCP    → AI/tooling adapter (Interface only)
 ```
 
 ---
 
 #### Key Principle
-
-> The CLI is the source of truth for automation.
-> MCP is only an interface layer for AI agents.
+> **CLI is the source of truth for automation.**
+> **MCP is only an interface layer for AI agents.**
 
 ---
 
-#### Why this design
-
-* No duplication of versioning logic
-* Works natively in CI/CD environments
-* Easy integration with AI coding agents
-* Simple to extend toward HTTP MCP later if needed
+### Step 12: Self-hosting & Dogfooding
+* Implement `CHANGELOG.md` for ChangeSharp using ChangeSharp itself.
+* Symbolically important for a tool promoting this practice.
