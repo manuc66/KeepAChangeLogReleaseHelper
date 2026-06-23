@@ -1,0 +1,34 @@
+stages:
+  - validate
+  - release
+
+validate_fragments:
+  stage: validate
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  script:
+    - dotnet tool install --global ChangeSharp.Cli
+    - export PATH="$PATH:$HOME/.dotnet/tools"
+    - changesharp validate
+  only:
+    - merge_requests
+
+perform_release:
+  stage: release
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  script:
+    - dotnet tool install --global ChangeSharp.Cli
+    - export PATH="$PATH:$HOME/.dotnet/tools"
+    - changesharp release --dry-run
+    - NEXT_VERSION=$(changesharp status --next-only)
+    - changesharp release
+    - git config user.name "gitlab-ci"
+    - git config user.email "gitlab-ci@example.com"
+    - git add .
+    - git commit -m "chore: release $NEXT_VERSION"
+    - git remote set-url origin https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git
+    - git push origin HEAD:main
+    - git tag v$NEXT_VERSION
+    - git push origin v$NEXT_VERSION
+  only:
+    - main
+  when: manual # Safer to have a manual gate for release

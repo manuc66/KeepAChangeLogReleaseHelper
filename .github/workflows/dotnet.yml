@@ -26,3 +26,9 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+    - name: Install ChangeSharp (Local)
+      run: dotnet pack ChangeSharp.Cli/ChangeSharp.Cli.csproj -o nupkg
+    - name: Validate Fragments
+      run: |
+        dotnet tool install --global --add-source ./nupkg ChangeSharp.Cli
+        changesharp validate --require-fragments

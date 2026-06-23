@@ -9,11 +9,10 @@ ChangeSharp is designed to facilitate a "Release on Merge" or "Release on Tag" w
 ### 1. Pull Request / Merge Request Phase
 **Goal**: Ensure every change is documented and valid before it reaches the main branch.
 
--   **Command**: `changesharp validate`
+-   **Command**: `changesharp validate --require-fragments`
 -   **Contract**:
     -   **Exit Code 0**: All fragments are valid and present.
-    -   **Exit Code 3**: Missing fragment (PR contains code changes but no `.changesharp/unreleased/*.md` file).
-    -   **Exit Code 4**: Invalid fragment format (e.g., wrong headers, invalid SemVer impact).
+    -   **Exit Code 3**: Validation Error (Missing fragment or invalid format).
 -   **CI Action**: Post a ❌ on the PR if exit code is non-zero. Use the predicted version bump in the comment.
 
 ### 2. Post-Merge / Release Phase
@@ -63,17 +62,17 @@ jobs:
           fetch-depth: 0
       
       - name: Validate Release
-        run: dotnet changesharp release --dry-run
+        run: changesharp release --dry-run
         
       - name: Perform Release
         run: |
-          dotnet changesharp release
+          changesharp release
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add .
-          git commit -m "chore: release $(dotnet changesharp status --next-only)"
+          git commit -m "chore: release $(changesharp status --next-only)"
           git push
-          git tag v$(dotnet changesharp status --next-only)
+          git tag v$(changesharp status --next-only)
           git push --tags
 ```
 

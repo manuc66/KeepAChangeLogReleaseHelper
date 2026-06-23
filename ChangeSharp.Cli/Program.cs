@@ -150,13 +150,24 @@ class Program
         rootCommand.Add(newCommand);
 
         // status command
-        var statusCommand = new Command("status", "Show the status of unreleased fragments and computed version bump.");
-        statusCommand.SetAction(_ =>
+        var nextOnlyOption = new Option<bool>("--next-only") { Description = "Only output the next version number." };
+        var statusCommand = new Command("status", "Show the status of unreleased fragments and computed version bump.")
         {
+            nextOnlyOption
+        };
+        statusCommand.SetAction(parseResult =>
+        {
+            bool nextOnly = parseResult.GetValue(nextOnlyOption);
             try
             {
                 var manager = new WorkspaceManager();
                 manager.GetStatus(out int count, out ChangeSet merged, out string current, out string next);
+
+                if (nextOnly)
+                {
+                    Console.WriteLine(next);
+                    return ExitCodeSuccess;
+                }
 
                 Console.WriteLine($"Unreleased fragments found: {count}");
                 if (count > 0)
@@ -191,9 +202,14 @@ class Program
         rootCommand.Add(statusCommand);
 
         // validate command
-        var validateCommand = new Command("validate", "Validate unreleased fragments for correct format.");
-        validateCommand.SetAction(_ =>
+        var requireFragmentsOption = new Option<bool>("--require-fragments") { Description = "Fail if no unreleased fragments are found." };
+        var validateCommand = new Command("validate", "Validate unreleased fragments for correct format.")
         {
+            requireFragmentsOption
+        };
+        validateCommand.SetAction(parseResult =>
+        {
+            bool requireFragments = parseResult.GetValue(requireFragmentsOption);
             try
             {
                 var manager = new WorkspaceManager();
@@ -201,6 +217,11 @@ class Program
 
                 if (results.Count == 0)
                 {
+                    if (requireFragments)
+                    {
+                        Console.Error.WriteLine("Error: No unreleased fragments found, but --require-fragments was specified.");
+                        return ExitCodeValidationError;
+                    }
                     Console.WriteLine("No unreleased fragments found to validate.");
                     return ExitCodeSuccess;
                 }

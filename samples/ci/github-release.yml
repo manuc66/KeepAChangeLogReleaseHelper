@@ -1,0 +1,38 @@
+name: Release
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'chore: release')"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x' # Use latest stable
+
+      - name: Install ChangeSharp
+        run: dotnet tool install --global ChangeSharp.Cli
+
+      - name: Validate Release (Dry Run)
+        run: changesharp release --dry-run
+
+      - name: Perform Release
+        run: |
+          NEXT_VERSION=$(changesharp status --next-only)
+          changesharp release
+          
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "chore: release $NEXT_VERSION"
+          git push
+          git tag v$NEXT_VERSION
+          git push --tags

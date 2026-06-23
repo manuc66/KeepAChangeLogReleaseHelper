@@ -31,10 +31,10 @@ To build a reliable MVP, we will prioritize robust parsing, extensible configura
 * Add `--dry-run` support to the `release` command.
 * Allow users to preview the next version, aggregated changes, and affected version targets without making actual changes to the filesystem.
 
-### Step 6: GitHub & GitLab CI/CD Integration (Priority 1)
-* Create sample workflow files (`release.yml` for GitHub, `.gitlab-ci.yml` for GitLab) to automate the release process.
+### Step 6: GitHub & GitLab CI/CD Integration (Completed)
+* Created sample workflow files (`release.yml` for GitHub, `.gitlab-ci.yml` for GitLab) to automate the release process.
 * **Focus**: Enable a standard "Release on Merge" or "Release on Tag" pipeline that is easy to adopt for DevOps engineers.
-* Include documentation for "Dry-run first" validation in CI to ensure no release happens without proper fragment validation.
+* Added `--next-only` and `--require-fragments` CLI options for better CI integration.
 
 ### Step 7: Pre-release Channels and Branch-based Versioning (Completed)
 * See detailed specification: [[Features/Prereleases|Pre-release Feature]]
