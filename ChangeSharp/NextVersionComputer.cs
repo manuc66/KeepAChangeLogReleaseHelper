@@ -34,13 +34,16 @@ public class NextVersionComputer
         // Determine the impact for each section
         int maxImpact = 0; // 0=None, 1=Patch, 2=Minor, 3=Major
         
-        if (changeSet.Breaking.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Breaking));
-        if (changeSet.Removed.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Removed));
-        if (changeSet.Changed.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Changed));
-        if (changeSet.Added.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Added));
-        if (changeSet.Deprecated.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Deprecated));
-        if (changeSet.Fixed.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Fixed));
-        if (changeSet.Security.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Security));
+        foreach (var pair in changeSet.Sections)
+        {
+            if (pair.Value.Count > 0)
+            {
+                if (policy.Mappings.TryGetValue(pair.Key, out var impact))
+                {
+                    maxImpact = Math.Max(maxImpact, ParseImpact(impact));
+                }
+            }
+        }
 
         if (maxImpact == 3) // Major
         {

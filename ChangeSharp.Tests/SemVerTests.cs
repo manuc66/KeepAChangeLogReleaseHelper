@@ -54,4 +54,17 @@ public class SemVerTests
         // Our current logic: 1.2.3-beta.1 + Added -> 1.3.0
         Assert.That(released.LastVersion, Is.EqualTo("1.3.0"));
     }
+
+    [Test]
+    public void ComputeVersion_CustomCategory_Works()
+    {
+        var changeSet = new ChangeSet();
+        changeSet.GetSection("Maintenance").Add("Cleanup");
+        
+        var policy = new SemverPolicyConfig();
+        policy.Mappings["Maintenance"] = "Patch";
+        
+        string next = NextVersionComputer.ComputeVersion("1.0.0", changeSet, policy);
+        Assert.That(next, Is.EqualTo("1.0.1"));
+    }
 }

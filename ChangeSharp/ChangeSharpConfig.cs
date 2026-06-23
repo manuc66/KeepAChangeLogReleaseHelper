@@ -9,17 +9,26 @@ public class ChangeSharpConfig
     public List<VersionTargetConfig> VersionTargets { get; set; } = new();
     public PreReleaseConfig PreRelease { get; set; } = new();
     public SemverPolicyConfig SemverPolicy { get; set; } = new();
+    public FragmentNamingConfig FragmentNaming { get; set; } = new();
+}
+
+public class FragmentNamingConfig
+{
+    public bool IncludeBranchName { get; set; } = true;
 }
 
 public class SemverPolicyConfig
 {
-    public string Breaking { get; set; } = "Major";
-    public string Removed { get; set; } = "Major";
-    public string Changed { get; set; } = "Major";
-    public string Added { get; set; } = "Minor";
-    public string Deprecated { get; set; } = "Minor";
-    public string Fixed { get; set; } = "Patch";
-    public string Security { get; set; } = "Patch";
+    public Dictionary<string, string> Mappings { get; set; } = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Breaking Changes", "Major" },
+        { "Removed", "Major" },
+        { "Changed", "Major" },
+        { "Added", "Minor" },
+        { "Deprecated", "Minor" },
+        { "Fixed", "Patch" },
+        { "Security", "Patch" }
+    };
 }
 
 public class PreReleaseConfig

@@ -4,56 +4,81 @@ namespace ChangeSharp;
 
 public class ChangeSet
 {
-    public List<string> Breaking { get; init; } = new();
-    public List<string> Changed { get; init; } = new();
-    public List<string> Removed { get; init; } = new();
-    public List<string> Added { get; init; } = new();
-    public List<string> Deprecated { get; init; } = new();
-    public List<string> Fixed { get; init; } = new();
-    public List<string> Security { get; init; } = new();
+    public Dictionary<string, List<string>> Sections { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public List<string> Breaking => GetSection("Breaking Changes");
+    public List<string> Changed => GetSection("Changed");
+    public List<string> Removed => GetSection("Removed");
+    public List<string> Added => GetSection("Added");
+    public List<string> Deprecated => GetSection("Deprecated");
+    public List<string> Fixed => GetSection("Fixed");
+    public List<string> Security => GetSection("Security");
+
+    public List<string> GetSection(string name)
+    {
+        if (!Sections.TryGetValue(name, out var list))
+        {
+            list = new List<string>();
+            Sections[name] = list;
+        }
+        return list;
+    }
 
     public ChangeSet Merge(ChangeSet other)
     {
-        return new ChangeSet
+        var result = new ChangeSet();
+        foreach (var pair in Sections)
         {
-            Breaking = Breaking.Union(other.Breaking).ToList(),
-            Changed = Changed.Union(other.Changed).ToList(),
-            Removed = Removed.Union(other.Removed).ToList(),
-            Added = Added.Union(other.Added).ToList(),
-            Deprecated = Deprecated.Union(other.Deprecated).ToList(),
-            Fixed = Fixed.Union(other.Fixed).ToList(),
-            Security = Security.Union(other.Security).ToList(),
-        };
+            result.GetSection(pair.Key).AddRange(pair.Value);
+        }
+        foreach (var pair in other.Sections)
+        {
+            var section = result.GetSection(pair.Key);
+            foreach (var item in pair.Value)
+            {
+                if (!section.Contains(item)) section.Add(item);
+            }
+        }
+        return result;
+    }
+
+    public bool IsEmpty()
+    {
+        return Sections.Values.All(v => v.Count == 0);
     }
 
     public override string ToString()
     {
-        StringBuilder sb = new();
-
-        string level = "##";
-        AddSection(sb, "Breaking Changes", Breaking, level);
-        AddSection(sb, nameof(Changed), Changed, level);
-        AddSection(sb, nameof(Removed), Removed, level);
-        AddSection(sb, nameof(Added), Added, level);
-        AddSection(sb, nameof(Deprecated), Deprecated, level);
-        AddSection(sb, nameof(Fixed), Fixed, level);
-        AddSection(sb, nameof(Security), Security, level);
-
-        return sb.ToString();
+        return ToMarkdownString("##");
     }
 
     public string ToChangelogString()
     {
-        StringBuilder sb = new();
+        return ToMarkdownString("###");
+    }
 
-        string level = "###";
-        AddSection(sb, "Breaking Changes", Breaking, level);
-        AddSection(sb, nameof(Changed), Changed, level);
-        AddSection(sb, nameof(Removed), Removed, level);
-        AddSection(sb, nameof(Added), Added, level);
-        AddSection(sb, nameof(Deprecated), Deprecated, level);
-        AddSection(sb, nameof(Fixed), Fixed, level);
-        AddSection(sb, nameof(Security), Security, level);
+    private string ToMarkdownString(string level)
+    {
+        StringBuilder sb = new();
+        var preferredOrder = new[] { "Breaking Changes", "Changed", "Removed", "Added", "Deprecated", "Fixed", "Security" };
+        var handled = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var name in preferredOrder)
+        {
+            if (Sections.TryGetValue(name, out var items) && items.Count > 0)
+            {
+                AddSection(sb, name, items, level);
+                handled.Add(name);
+            }
+        }
+
+        foreach (var pair in Sections)
+        {
+            if (!handled.Contains(pair.Key) && pair.Value.Count > 0)
+            {
+                AddSection(sb, pair.Key, pair.Value, level);
+            }
+        }
 
         return sb.ToString();
     }

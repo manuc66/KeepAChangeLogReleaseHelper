@@ -14,4 +14,19 @@ To avoid the pitfalls of using *Keep a Changelog* categories directly for SemVer
 
 ## Customization
 
-You can override these default mappings in your `changesharp.json` configuration file to better suit your project's versioning policy. For example, if you follow a more relaxed SemVer approach where "Changed" is always backward-compatible, you can map it to `Minor`.
+You can override these default mappings or define entirely new categories in your `changesharp.json` configuration file. This is useful for internal maintenance, documentation changes, or specific project workflows.
+
+```json
+{
+  "SemverPolicy": {
+    "Mappings": {
+      "Breaking Changes": "Major",
+      "Added": "Minor",
+      "Maintenance": "Patch",
+      "Documentation": "None"
+    }
+  }
+}
+```
+
+Impact levels supported: `Major`, `Minor`, `Patch`, `None`.

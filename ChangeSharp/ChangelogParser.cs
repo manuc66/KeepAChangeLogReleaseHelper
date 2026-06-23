@@ -33,38 +33,7 @@ internal class ChangelogParser
                     .TrimStart('#')
                     .Trim();
 
-                if (headingText.Equals("Breaking Changes", StringComparison.OrdinalIgnoreCase))
-                {
-                    currentList = result.Breaking;
-                }
-                else if (headingText.Equals("Changed", StringComparison.OrdinalIgnoreCase))
-                {
-                    currentList = result.Changed;
-                }
-                else if (headingText.Equals("Removed", StringComparison.OrdinalIgnoreCase))
-                {
-                    currentList = result.Removed;
-                }
-                else if (headingText.Equals("Added", StringComparison.OrdinalIgnoreCase))
-                {
-                    currentList = result.Added;
-                }
-                else if (headingText.Equals("Deprecated", StringComparison.OrdinalIgnoreCase))
-                {
-                    currentList = result.Deprecated;
-                }
-                else if (headingText.Equals("Fixed", StringComparison.OrdinalIgnoreCase))
-                {
-                    currentList = result.Fixed;
-                }
-                else if (headingText.Equals("Security", StringComparison.OrdinalIgnoreCase))
-                {
-                    currentList = result.Security;
-                }
-                else
-                {
-                    currentList = null;
-                }
+                currentList = result.GetSection(headingText);
             }
             else if (currentList != null)
             {

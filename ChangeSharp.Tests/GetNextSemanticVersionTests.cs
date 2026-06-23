@@ -8,7 +8,7 @@ public class GetNextSemanticVersionTests
     }
 
     [Test]
-    public void ItComputeAMinorFromChanged()
+    public void ItComputeAMajorFromChanged()
     {
         string changeset = @"
         ## Changed
@@ -18,7 +18,7 @@ public class GetNextSemanticVersionTests
 
         string nextVersion = NextVersionComputer.GetNextSemanticVersion(changeset, "1.0.0");
 
-        Assert.That(nextVersion, Is.EqualTo("1.1.0"));
+        Assert.That(nextVersion, Is.EqualTo("2.0.0"));
     }
 
     [Test]

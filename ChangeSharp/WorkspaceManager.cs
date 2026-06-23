@@ -17,19 +17,39 @@ public class WorkspaceManager
 
     private string ConfigFilePath => Path.Combine(_basePath, ConfigFileName);
 
-    public void Initialize()
+    public List<VersionTargetConfig> Initialize()
     {
         // 1. Create default configuration
-        var config = new ChangeSharpConfig();
-        if (!File.Exists(ConfigFilePath))
+        bool isNewConfig = !File.Exists(ConfigFilePath);
+        var config = isNewConfig ? new ChangeSharpConfig() : LoadConfig();
+
+        // Auto-discovery of version targets
+        var discoveredTargets = DiscoverVersionTargets();
+        var newTargets = new List<VersionTargetConfig>();
+
+        if (isNewConfig)
+        {
+            config.VersionTargets.AddRange(discoveredTargets);
+            newTargets.AddRange(discoveredTargets);
+        }
+        else
+        {
+            var existingPaths = new HashSet<string>(config.VersionTargets.Select(t => t.Path), StringComparer.OrdinalIgnoreCase);
+            foreach (var discovered in discoveredTargets)
+            {
+                if (!existingPaths.Contains(discovered.Path))
+                {
+                    config.VersionTargets.Add(discovered);
+                    newTargets.Add(discovered);
+                }
+            }
+        }
+
+        if (isNewConfig || newTargets.Any())
         {
             var options = new JsonSerializerOptions { WriteIndented = true };
             string json = JsonSerializer.Serialize(config, options);
             File.WriteAllText(ConfigFilePath, json, Encoding.UTF8);
-        }
-        else
-        {
-            config = LoadConfig();
         }
 
         // 2. Create unreleased directory
@@ -68,6 +88,123 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ";
             File.WriteAllText(changelogPath, defaultChangelog, Encoding.UTF8);
         }
+
+        return newTargets;
+    }
+
+    public List<VersionTargetConfig> DiscoverNewTargets()
+    {
+        if (!File.Exists(ConfigFilePath)) return DiscoverVersionTargets();
+
+        var config = LoadConfig();
+        var allDiscovered = DiscoverVersionTargets();
+
+        var existingPaths = new HashSet<string>(config.VersionTargets.Select(t => t.Path), StringComparer.OrdinalIgnoreCase);
+
+        return allDiscovered.Where(t => !existingPaths.Contains(t.Path)).ToList();
+    }
+
+    public List<VersionTargetConfig> DiscoverVersionTargets()
+    {
+        var targets = new List<VersionTargetConfig>();
+        var rootDir = new DirectoryInfo(_basePath);
+
+        // Patterns to look for
+        var msbuildPatterns = new[] { "*.csproj", "Directory.Build.props" };
+        var jsonPatterns = new[] { "package.json" };
+
+        // Directories to skip
+        var skipDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "bin", "obj", ".git", "node_modules", ".changesharp" };
+
+        DiscoverRecursive(rootDir, targets, msbuildPatterns, jsonPatterns, skipDirs, 0, 3); // max depth 3
+
+        return targets;
+    }
+
+    private void DiscoverRecursive(DirectoryInfo dir, List<VersionTargetConfig> targets, string[] msbuildPatterns, string[] jsonPatterns, HashSet<string> skipDirs, int currentDepth, int maxDepth)
+    {
+        if (currentDepth > maxDepth) return;
+        if (skipDirs.Contains(dir.Name)) return;
+
+        foreach (var pattern in msbuildPatterns)
+        {
+            foreach (var file in dir.GetFiles(pattern))
+            {
+                targets.Add(new VersionTargetConfig
+                {
+                    Path = Path.GetRelativePath(_basePath, file.FullName),
+                    Type = "msbuild"
+                });
+            }
+        }
+
+        foreach (var pattern in jsonPatterns)
+        {
+            foreach (var file in dir.GetFiles(pattern))
+            {
+                targets.Add(new VersionTargetConfig
+                {
+                    Path = Path.GetRelativePath(_basePath, file.FullName),
+                    Type = "json",
+                    JsonPath = "version"
+                });
+            }
+        }
+
+        foreach (var subDir in dir.GetDirectories())
+        {
+            DiscoverRecursive(subDir, targets, msbuildPatterns, jsonPatterns, skipDirs, currentDepth + 1, maxDepth);
+        }
+    }
+
+    public List<ValidationResult> Validate()
+    {
+        var config = LoadConfig();
+        string unreleasedPath = Path.Combine(_basePath, config.UnreleasedDir);
+        if (!Directory.Exists(unreleasedPath)) return new List<ValidationResult>();
+
+        var files = Directory.GetFiles(unreleasedPath, "*.md");
+        var results = new List<ValidationResult>();
+        var parser = new ChangelogParser();
+
+        foreach (var file in files)
+        {
+            var result = new ValidationResult { FilePath = Path.GetRelativePath(_basePath, file) };
+            string content = File.ReadAllText(file, Encoding.UTF8);
+
+            // Simple validation using the parser
+            var changeSet = parser.Parse(content);
+
+            if (changeSet.IsEmpty())
+            {
+                result.Errors.Add("Fragment is empty.");
+            }
+            else if (changeSet.Sections.Keys.All(k => !config.SemverPolicy.Mappings.ContainsKey(k)))
+            {
+                string validCats = string.Join(", ", config.SemverPolicy.Mappings.Keys);
+                result.Errors.Add($"Fragment has no recognized categories. Recognized: {validCats}");
+            }
+
+            // More specific validation using Markdig directly
+            var doc = Markdig.Markdown.Parse(content);
+            if (doc.Count == 0)
+            {
+                result.Errors.Add("Markdown file is empty.");
+            }
+            else
+            {
+                var firstBlock = doc.FirstOrDefault();
+                if (firstBlock is not Markdig.Syntax.HeadingBlock hb || hb.Level != 3)
+                {
+                    result.Errors.Add("Fragment must start with a level 3 heading (### Category).");
+                }
+            }
+
+            result.IsValid = result.Errors.Count == 0;
+            results.Add(result);
+        }
+
+        return results;
     }
 
     public string CreateFragment(string message, string category)
@@ -82,7 +219,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         // Clean/slugify message for filename
         string slug = Slugify(message);
         string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-        string filename = $"{timestamp}-{slug}.md";
+        
+        string filename;
+        if (config.FragmentNaming.IncludeBranchName)
+        {
+            string branch = GetGitBranchName() ?? "";
+            string branchSlug = string.IsNullOrWhiteSpace(branch) ? "" : Slugify(branch) + "-";
+            filename = $"{timestamp}-{branchSlug}{slug}.md";
+        }
+        else
+        {
+            filename = $"{timestamp}-{slug}.md";
+        }
+
         string filePath = Path.Combine(unreleasedPath, filename);
 
         // Normalize category naming (e.g. "Breaking Changes" vs "Added")
@@ -92,6 +241,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         File.WriteAllText(filePath, content, Encoding.UTF8);
 
         return filePath;
+    }
+
+    private string? GetGitBranchName()
+    {
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = "rev-parse --abbrev-ref HEAD",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = _basePath
+            };
+
+            using var process = System.Diagnostics.Process.Start(startInfo);
+            if (process == null) return null;
+            
+            string branch = process.StandardOutput.ReadToEnd().Trim();
+            process.WaitForExit();
+            
+            return process.ExitCode == 0 ? branch : null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public void GetStatus(
@@ -554,23 +731,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         return string.IsNullOrEmpty(normalized) ? "change" : normalized;
     }
 
-    private static string NormalizeCategory(string category)
+    private string NormalizeCategory(string category)
     {
+        var config = LoadConfig();
         string cleaned = category.Trim();
-        if (cleaned.Equals("breaking", StringComparison.OrdinalIgnoreCase) ||
-            cleaned.Equals("breaking changes", StringComparison.OrdinalIgnoreCase))
+
+        foreach (var mapping in config.SemverPolicy.Mappings)
+        {
+            if (mapping.Key.Equals(cleaned, StringComparison.OrdinalIgnoreCase))
+            {
+                return mapping.Key;
+            }
+        }
+
+        // Special case for "breaking" -> "Breaking Changes"
+        if (cleaned.Equals("breaking", StringComparison.OrdinalIgnoreCase) && config.SemverPolicy.Mappings.ContainsKey("Breaking Changes"))
         {
             return "Breaking Changes";
         }
 
-        // Title case for standard Keep a Changelog categories
-        if (cleaned.Equals("added", StringComparison.OrdinalIgnoreCase)) return "Added";
-        if (cleaned.Equals("changed", StringComparison.OrdinalIgnoreCase)) return "Changed";
-        if (cleaned.Equals("deprecated", StringComparison.OrdinalIgnoreCase)) return "Deprecated";
-        if (cleaned.Equals("removed", StringComparison.OrdinalIgnoreCase)) return "Removed";
-        if (cleaned.Equals("fixed", StringComparison.OrdinalIgnoreCase)) return "Fixed";
-        if (cleaned.Equals("security", StringComparison.OrdinalIgnoreCase)) return "Security";
-
-        return cleaned; // Fallback
+        return cleaned;
     }
 }

@@ -22,8 +22,41 @@ class Program
             try
             {
                 var manager = new WorkspaceManager();
-                manager.Initialize();
-                Console.WriteLine("ChangeSharp workspace initialized successfully.");
+                bool configExists = File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "changesharp.json"));
+                var targets = manager.Initialize();
+                
+                if (configExists)
+                {
+                    if (targets.Any())
+                    {
+                        Console.WriteLine("ChangeSharp workspace updated with new components.");
+                        Console.WriteLine("Added version targets:");
+                        foreach (var target in targets)
+                        {
+                            Console.WriteLine($"  - {target.Path} ({target.Type})");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("ChangeSharp workspace is already up to date. No new components discovered.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("ChangeSharp workspace initialized successfully.");
+                    if (targets.Any())
+                    {
+                        Console.WriteLine("Auto-discovered version targets:");
+                        foreach (var target in targets)
+                        {
+                            Console.WriteLine($"  - {target.Path} ({target.Type})");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No version targets were auto-discovered. You can add them manually to changesharp.json.");
+                    }
+                }
                 return ExitCodeSuccess;
             }
             catch (Exception ex)
@@ -134,6 +167,19 @@ class Program
                     Console.WriteLine();
                     Console.WriteLine($"Computed Version Bump: {current} -> {next}");
                 }
+
+                var newTargets = manager.DiscoverNewTargets();
+                if (newTargets.Any())
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Warning: New components discovered but not tracked in changesharp.json:");
+                    foreach (var target in newTargets)
+                    {
+                        Console.WriteLine($"  - {target.Path} ({target.Type})");
+                    }
+                    Console.WriteLine("Run 'changesharp init' to add them to your configuration.");
+                }
+
                 return ExitCodeSuccess;
             }
             catch (Exception ex)
@@ -143,6 +189,58 @@ class Program
             }
         });
         rootCommand.Add(statusCommand);
+
+        // validate command
+        var validateCommand = new Command("validate", "Validate unreleased fragments for correct format.");
+        validateCommand.SetAction(_ =>
+        {
+            try
+            {
+                var manager = new WorkspaceManager();
+                var results = manager.Validate();
+
+                if (results.Count == 0)
+                {
+                    Console.WriteLine("No unreleased fragments found to validate.");
+                    return ExitCodeSuccess;
+                }
+
+                int errorCount = 0;
+                foreach (var result in results)
+                {
+                    if (result.IsValid)
+                    {
+                        Console.WriteLine($"✓ {result.FilePath}: Valid");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"✗ {result.FilePath}: Invalid");
+                        foreach (var error in result.Errors)
+                        {
+                            Console.WriteLine($"  - {error}");
+                        }
+                        errorCount++;
+                    }
+                }
+
+                if (errorCount > 0)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"{errorCount} fragment(s) failed validation.");
+                    return ExitCodeValidationError;
+                }
+
+                Console.WriteLine();
+                Console.WriteLine("All fragments are valid.");
+                return ExitCodeSuccess;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: {ex.Message}");
+                return ExitCodeGenericError;
+            }
+        });
+        rootCommand.Add(validateCommand);
 
         // release command
         var dryRunOption = new Option<bool>("--dry-run") { Description = "Display what would happen without making any changes." };

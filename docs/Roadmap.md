@@ -42,6 +42,7 @@ To build a reliable MVP, we will prioritize robust parsing, extensible configura
 * Automatically suggest and add these as `VersionTargets` in `changesharp.json`.
 * **Continuous Discovery**: `init` is now additive and can be rerun at any time to discover and add new projects added to the repository after the initial setup. `status` also checks for untracked components and warns the user.
 * See [[Features/ContinuousDiscovery|Continuous Discovery Specification]].
+* **Frictionless Merge**: Strategy implemented to avoid conflicts on management files using isolated fragments and deferred versioning. See [[FrictionlessWorkflow|Frictionless Merge Workflow]].
 
 ### Step 9: Fragment Validation and Linting (Completed)
 * Add a `lint` or `validate` command to check if unreleased fragments follow the expected Markdown structure.

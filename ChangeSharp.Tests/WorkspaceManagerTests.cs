@@ -141,7 +141,7 @@ public class WorkspaceManagerTests
         string configPath = Path.Combine(_testDir, "changesharp.json");
         string json = File.ReadAllText(configPath);
         var config = System.Text.Json.JsonSerializer.Deserialize<ChangeSharpConfig>(json);
-        config.SemverPolicy.Changed = "Minor";
+        config.SemverPolicy.Mappings["Changed"] = "Minor";
         File.WriteAllText(configPath, System.Text.Json.JsonSerializer.Serialize(config));
         
         manager.CreateFragment("Changed a feature", "Changed");
@@ -149,5 +149,161 @@ public class WorkspaceManagerTests
         string nextVersion = manager.Release(DateTime.Today);
 
         Assert.That(nextVersion, Is.EqualTo("0.1.0"));
+    }
+
+    [Test]
+    public void Initialize_AutoDiscoversTargets_Works()
+    {
+        // Setup dummy project files
+        File.WriteAllText(Path.Combine(_testDir, "Project1.csproj"), "<Project />");
+        Directory.CreateDirectory(Path.Combine(_testDir, "SubDir"));
+        File.WriteAllText(Path.Combine(_testDir, "SubDir", "Project2.csproj"), "<Project />");
+        File.WriteAllText(Path.Combine(_testDir, "package.json"), "{\"version\": \"1.0.0\"}");
+        File.WriteAllText(Path.Combine(_testDir, "Directory.Build.props"), "<Project />");
+        
+        var manager = new WorkspaceManager(_testDir);
+        var targets = manager.Initialize();
+
+        Assert.That(targets.Count, Is.EqualTo(4));
+        Assert.That(targets.Any(t => t.Path == "Project1.csproj" && t.Type == "msbuild"), Is.True);
+        Assert.That(targets.Any(t => t.Path == Path.Combine("SubDir", "Project2.csproj") && t.Type == "msbuild"), Is.True);
+        Assert.That(targets.Any(t => t.Path == "package.json" && t.Type == "json"), Is.True);
+        Assert.That(targets.Any(t => t.Path == "Directory.Build.props" && t.Type == "msbuild"), Is.True);
+    }
+
+    [Test]
+    public void Validate_ValidFragment_ReturnsValid()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        manager.CreateFragment("Feature A", "Added");
+
+        var results = manager.Validate();
+
+        Assert.That(results.Count, Is.EqualTo(1));
+        Assert.That(results[0].IsValid, Is.True);
+    }
+
+    [Test]
+    public void Validate_InvalidFragments_ReturnErrors()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        
+        // 1. Empty file
+        string unreleasedDir = Path.Combine(_testDir, ".changesharp/unreleased");
+        File.WriteAllText(Path.Combine(unreleasedDir, "empty.md"), "");
+        
+        // 2. Wrong heading level
+        File.WriteAllText(Path.Combine(unreleasedDir, "wrong_heading.md"), "## Added\n- Feature");
+        
+        // 3. No recognized category
+        File.WriteAllText(Path.Combine(unreleasedDir, "unknown_cat.md"), "### Unknown\n- Feature");
+
+        var results = manager.Validate().OrderBy(r => r.FilePath).ToList();
+
+        Assert.That(results.Count, Is.EqualTo(3));
+        
+        // empty.md
+        var emptyResult = results.First(r => r.FilePath.EndsWith("empty.md"));
+        Assert.That(emptyResult.IsValid, Is.False);
+        Assert.That(emptyResult.Errors, Contains.Item("Markdown file is empty."));
+        
+        // unknown_cat.md
+        var unknownResult = results.First(r => r.FilePath.EndsWith("unknown_cat.md"));
+        Assert.That(unknownResult.IsValid, Is.False);
+        Assert.That(unknownResult.Errors.Any(e => e.Contains("no recognized categories")), Is.True);
+        
+        // wrong_heading.md
+        var headingResult = results.First(r => r.FilePath.EndsWith("wrong_heading.md"));
+        Assert.That(headingResult.IsValid, Is.False);
+        Assert.That(headingResult.Errors.Any(e => e.Contains("must start with a level 3 heading")), Is.True);
+    }
+
+    [Test]
+    public void Release_CustomCategory_Works()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        
+        // Add custom category to config
+        string configPath = Path.Combine(_testDir, "changesharp.json");
+        string json = File.ReadAllText(configPath);
+        var config = System.Text.Json.JsonSerializer.Deserialize<ChangeSharpConfig>(json);
+        config.SemverPolicy.Mappings["Maintenance"] = "Patch";
+        File.WriteAllText(configPath, System.Text.Json.JsonSerializer.Serialize(config));
+        
+        manager.CreateFragment("Refactored some code", "Maintenance");
+
+        string nextVersion = manager.Release(DateTime.Today);
+
+        Assert.That(nextVersion, Is.EqualTo("0.0.1"));
+        Assert.That(File.ReadAllText(Path.Combine(_testDir, "CHANGELOG.md")), Contains.Substring("### Maintenance"));
+        Assert.That(File.ReadAllText(Path.Combine(_testDir, "CHANGELOG.md")), Contains.Substring("- Refactored some code"));
+    }
+    [Test]
+    public void Initialize_AdditiveDiscovery_Works()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        
+        // 1. Initial setup with one project
+        File.WriteAllText(Path.Combine(_testDir, "ProjectA.csproj"), "<Project />");
+        var initialTargets = manager.Initialize();
+        
+        Assert.That(initialTargets.Count, Is.EqualTo(1));
+        Assert.That(initialTargets[0].Path, Is.EqualTo("ProjectA.csproj"));
+        
+        // 2. Add a new project
+        File.WriteAllText(Path.Combine(_testDir, "ProjectB.csproj"), "<Project />");
+        
+        // 3. Re-initialize
+        var updatedTargets = manager.Initialize();
+        
+        Assert.That(updatedTargets.Count, Is.EqualTo(1), "Only new targets should be returned");
+        Assert.That(updatedTargets[0].Path, Is.EqualTo("ProjectB.csproj"));
+        
+        // 4. Verify config file contains both
+        string configJson = File.ReadAllText(Path.Combine(_testDir, "changesharp.json"));
+        Assert.That(configJson, Contains.Substring("ProjectA.csproj"));
+        Assert.That(configJson, Contains.Substring("ProjectB.csproj"));
+    }
+
+    [Test]
+    public void DiscoverNewTargets_FindsUntrackedProjects()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        
+        // 1. Initial setup
+        File.WriteAllText(Path.Combine(_testDir, "ProjectA.csproj"), "<Project />");
+        manager.Initialize();
+        
+        // 2. Add a new project but don't re-init yet
+        File.WriteAllText(Path.Combine(_testDir, "ProjectB.csproj"), "<Project />");
+        
+        // 3. Discover
+        var newTargets = manager.DiscoverNewTargets();
+        
+        Assert.That(newTargets.Count, Is.EqualTo(1));
+        Assert.That(newTargets[0].Path, Is.EqualTo("ProjectB.csproj"));
+    }
+
+    [Test]
+    public void CreateFragment_RespectsIncludeBranchName()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        
+        // We can't easily mock git process in this environment, 
+        // but we can check if it handles the config flag.
+        string configPath = Path.Combine(_testDir, "changesharp.json");
+        File.WriteAllText(configPath, "{\"FragmentNaming\": {\"IncludeBranchName\": false}}");
+
+        string path = manager.CreateFragment("test message", "Added");
+        string filename = Path.GetFileName(path);
+        
+        // Should not have branch name if disabled (format: timestamp-slug.md)
+        // Timestamp is 14 digits
+        Assert.That(filename.Length, Is.EqualTo(14 + 1 + "test-message".Length + 3));
+        Assert.That(filename, Does.EndWith("-test-message.md"));
     }
 }

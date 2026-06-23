@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Continuous Discovery: `init` is now additive, and `status` warns about untracked components.
 - Fragment Validation: New `validate` command to lint unreleased fragments.
 - Custom Categories: Support for user-defined categories and custom SemVer impact mappings in `changesharp.json`.
+- Frictionless Workflow: Fragments now include the Git branch name by default to further reduce collision risks in multi-developer environments.
 
 ### Changed
 - Refined Roadmap structure (UX improvements and better ordering).
