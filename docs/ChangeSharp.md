@@ -11,8 +11,9 @@
 ### 💡 Core Concept
 * [[ChangeSharp#Strategic Positioning|Strategic Positioning]]
 * [[SemVer Rules|SemVer Derivation Rules]] - How fragments impact versioning.
-* [[features/SemanticValidation|Semantic Safety Gates]] - Cross-verifying code vs fragments.
+* [[features/SyntacticValidation|Syntactic Safety Gates]] - Cross-verifying code vs fragments.
 * [[features/ApprovalGates|Approval Gates]] - Security and human-in-the-loop.
+* [[Migration|Migration Guide]] - Moving from GitVersion/MinVer to ChangeSharp.
 
 ### 🛠️ Development & Roadmap
 * [[Architecture|Codebase Analysis]] - Technical overview of the project.
@@ -27,15 +28,16 @@
 
 ## 🚀 Strategic Positioning: Why Choose ChangeSharp?
 
-In the .NET ecosystem, release versioning is heavily dominated by tools like **GitVersion** and **MinVer**. While powerful, they bind versioning and release notes directly to Git commit messages.
+In the .NET ecosystem, release versioning is heavily dominated by tools like **GitVersion** and **MinVer** (commit-driven) or general tools like **Changie** and **Release Please**.
 
-ChangeSharp offers a different philosophy focused on **Developer Experience** and **Enterprise Workflow**:
+ChangeSharp distinguishes itself as the **Changelog-driven versioning enterprise-ready for .NET with AI-native integration**:
 
-*   **Separation of Concerns**: Git history is for developer implementation details; changelogs are for user-facing value.
-*   **Conflict-Free Workflows**: Branches add independent fragments as separate Markdown files, eliminating merge conflicts on `CHANGELOG.md`.
-*   **CI/CD First (Native Bot Story)**: Designed to integrate into PR/MR workflows with native bots that validate fragments and preview release impact before merging.
-*   **Enterprise-Ready Security**: Built-in support for approval gates and dry-runs, especially when using AI agents via MCP.
-*   **Polyglot Ambition**: While starting as .NET native, ChangeSharp aims to be the universal changelog manager with first-class support for Python, Rust, and Java via specialized handlers.
+*   **Natively Integrated in .NET**: First-class support for MSBuild, .NET Global Tools, and C# library usage.
+*   **Safety Gates (The Differentiator)**: Unlike simple fragment managers, ChangeSharp includes **Syntactic Safety Gates** to cross-verify declared SemVer impact against actual API surface changes.
+*   **Separation of Concerns**: Git history is for developers; changelogs are for users.
+*   **Conflict-Free Workflows**: Independent Markdown fragments eliminate merge conflicts on `CHANGELOG.md`.
+*   **AI-Native (MCP Layer)**: First tool to expose changelog management to AI agents via the **Model Context Protocol (MCP)**, with built-in security approval gates.
+*   **Enterprise-Ready**: Support for complex monorepos, hierarchical configurations, and strict CI/CD validation.
 
 #### Why This Matters
-Unlike commit-driven versioning tools, ChangeSharp derives both releases and pre-releases from user-facing changelog fragments. This ensures that version numbers remain predictable, meaningful, and directly tied to documented changes rather than implementation details hidden in Git history.
+Unlike commit-driven tools, ChangeSharp ensures that version numbers are predictable and tied to documented user-facing value. It provides a level of automated trust (via Safety Gates) that neither simple fragment tools nor commit-parsers can offer today.

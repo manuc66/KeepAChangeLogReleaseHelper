@@ -23,7 +23,7 @@ public class SemverPolicyConfig
     {
         { "Breaking Changes", "Major" },
         { "Removed", "Major" },
-        { "Changed", "Major" },
+        { "Changed", "Minor" },
         { "Added", "Minor" },
         { "Deprecated", "Minor" },
         { "Fixed", "Patch" },

@@ -24,7 +24,7 @@ To build a reliable MVP, we will prioritize robust parsing, extensible configura
 
 ### Step 4: Config, Propagation & SemVer Policy (Completed)
 * Provide standard target handlers (MSBuild, JSON, text/regex) via `changesharp.json`.
-* **SemVer Mapping**: Document and allow override of the `Changed` → `Major` policy. By default, "Changed" triggers a Major bump, but this must be configurable.
+* **SemVer Mapping**: Document and allow override of the `Changed` → `Minor` policy (updated from `Major` based on user feedback to prevent accidental breaking bumps).
 * **Principle**: Step 4 ensures the tool is extensible via configuration rather than hardcoded logic.
 
 ### Step 5: Dry-run Mode (Completed)
@@ -116,26 +116,19 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
     * Provide a seamless "Install" experience from the marketplace.
 * See [[Features/CiIntegration|CI/CD Integration Contract]].
 
-### Step 14: Polyglot Support & First-Class Handlers (Priority 3)
-* **Goal**: Move beyond "survivability" for non-.NET projects.
-* **Actions**:
-    * Implement native handlers for `pyproject.toml` (Python), `Cargo.toml` (Rust), and `pom.xml` (Java).
-    * Formalize the Regex handler documentation with clear, copy-pasteable examples for any language.
-    * Explore a simple plugin system for custom version targets.
-
-### Step 15: Enterprise Security & Approval Gates (Completed)
+### Step 14: Enterprise Security & Approval Gates (Completed)
 * **Dry-run enforcement**: Implement a mandatory `--dry-run` or `--require-approval` flag for MCP `perform_release` tool.
 * Ensure AI agents cannot trigger a production release without an explicit human gate in the loop.
 * See [[Features/ApprovalGates|Enterprise Security & Approval Gates]].
 
-### Step 16: Repository Intelligence for Agents (Priority 2)
+### Step 15: Repository Intelligence for Agents (Priority 2)
 * **Goal**: Allow AI agents to understand what has changed in the codebase since the last release, even if fragments are missing.
 * **Features**:
     * `query_changes`: A tool to compare the current state with the last tag/release and identify modified files/functions.
     * **Fragment Gap Analysis**: Automatically suggest missing fragments based on uncommitted or unreleased code changes.
     * Summarize "What's New" from both a technical (Git) and user (Changelog) perspective.
 
-### Step 17: Syntactic API Validation (Safety Gate) (Priority 1)
+### Step 16: Syntactic API Validation (Safety Gate) (Priority 1)
 * **Goal**: Ensure the promised SemVer impact in fragments matches the reality of the code changes.
 * **Actions**:
     * Integrate with API surface tracking tools (e.g., `PublicApiGenerator` for .NET, Swagger diff for APIs).
@@ -144,7 +137,7 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
     * **Note**: This is a **syntactic** gate. It detects signature changes but cannot guarantee **semantic** behavior (e.g., a logic change in a method body that keeps the same signature).
 * See [[Features/SyntacticValidation|Syntactic Validation Safety Gate]].
 
-### Step 18: Multi-Team Monorepo Scoping (Priority 2)
+### Step 17: Multi-Team Monorepo Scoping (Priority 2)
 * **Goal**: Support large-scale enterprise monorepos with independent team policies.
 * **Position**: ChangeSharp aims to support enterprise monorepos. To avoid friction between teams, we will implement a scoped model where `changesharp.json` can exist in sub-directories, defining independent versioning policies and changelogs for that specific scope.
 * **Actions**:
@@ -153,3 +146,23 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
     * **Service-Specific Changelogs**: Generate independent `CHANGELOG.md` files for different parts of the repository.
     * **Policy Overrides**: Team A might want `Changed -> Major` while Team B wants `Changed -> Minor`.
 * See [[features/MonorepoSupport|Multi-Team Monorepo Support]].
+
+### Step 18: Migration & Enterprise Adoption (Priority 1)
+* **Goal**: Provide a clear path for teams moving from GitVersion/MinVer to ChangeSharp.
+* **Actions**:
+    * Create a dedicated [[Migration|Migration Guide]].
+    * Add "Compatibility Modes" (e.g., auto-import fragments from Git trailers if missing).
+    * Develop a "Migration Script" to convert existing changelogs into ChangeSharp fragments (reverse release).
+
+### Step 19: Concrete Metrics & Benchmarks (Priority 3)
+* **Goal**: Prove the value proposition with data.
+* **Actions**:
+    * Conduct benchmarks on merge conflict reduction in multi-developer teams.
+    * Track "Version Accuracy" (declared vs. actual API impact) using the Syntactic Safety Gate.
+
+---
+
+### Future Expansion: Polyglot Support
+*To maintain focus on the core .NET enterprise experience, broader polyglot features are isolated here.*
+* **Step 20: Native Handlers**: Implement `pyproject.toml` (Python), `Cargo.toml` (Rust), and `pom.xml` (Java) handlers.
+* **Step 21: Universal Plugin System**: Allow external scripts to act as version targets.

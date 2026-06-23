@@ -120,7 +120,7 @@ public class WorkspaceManagerTests
     }
 
     [Test]
-    public void Release_ChangedTriggersMajor_ByDefault()
+    public void Release_ChangedTriggersMinor_ByDefault()
     {
         var manager = new WorkspaceManager(_testDir);
         manager.Initialize();
@@ -128,7 +128,7 @@ public class WorkspaceManagerTests
 
         string nextVersion = manager.Release(DateTime.Today);
 
-        Assert.That(nextVersion, Is.EqualTo("1.0.0"));
+        Assert.That(nextVersion, Is.EqualTo("0.1.0"));
     }
 
     [Test]
@@ -141,14 +141,14 @@ public class WorkspaceManagerTests
         string configPath = Path.Combine(_testDir, "changesharp.json");
         string json = File.ReadAllText(configPath);
         var config = System.Text.Json.JsonSerializer.Deserialize<ChangeSharpConfig>(json);
-        config.SemverPolicy.Mappings["Changed"] = "Minor";
+        config.SemverPolicy.Mappings["Changed"] = "Major";
         File.WriteAllText(configPath, System.Text.Json.JsonSerializer.Serialize(config));
         
         manager.CreateFragment("Changed a feature", "Changed");
 
         string nextVersion = manager.Release(DateTime.Today);
 
-        Assert.That(nextVersion, Is.EqualTo("0.1.0"));
+        Assert.That(nextVersion, Is.EqualTo("1.0.0"));
     }
 
     [Test]
