@@ -37,17 +37,20 @@ To build a reliable MVP, we will prioritize robust parsing, extensible configura
 ### Step 7: Pre-release Channels and Branch-based Versioning (Completed)
 * See detailed specification: [[Features/Prereleases|Pre-release Feature]]
 
-### Step 8: Smart Init (Auto-discovery)
+### Step 8: Smart Init (Auto-discovery) (Completed)
 * Enhance the `init` command to scan the workspace for common project files (e.g., `.csproj`, `package.json`, `Directory.Build.props`).
 * Automatically suggest and add these as `VersionTargets` in `changesharp.json`.
+* **Continuous Discovery**: `init` is now additive and can be rerun at any time to discover and add new projects added to the repository after the initial setup. `status` also checks for untracked components and warns the user.
+* See [[Features/ContinuousDiscovery|Continuous Discovery Specification]].
 
-### Step 9: Fragment Validation and Linting
+### Step 9: Fragment Validation and Linting (Completed)
 * Add a `lint` or `validate` command to check if unreleased fragments follow the expected Markdown structure.
 * This must precede custom category support to ensure the validation engine is extensible.
 
-### Step 10: Custom Categories and Mappings
+### Step 10: Custom Categories and Mappings (Completed)
 * Allow users to define custom changelog categories in `changesharp.json`.
 * Enable mapping these custom categories to specific SemVer impacts (Major, Minor, or Patch).
+* See [[Features/CustomCategories|Custom Categories Specification]].
 
 ### Step 11: AI Automation Layer (CLI + MCP)
 

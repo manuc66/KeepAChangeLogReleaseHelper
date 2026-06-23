@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented robust, transactional release process using a temporary `releasing` directory to handle interruptions.
 - Added `--allow-empty` to `release` command.
 - Self-hosting: Added this `CHANGELOG.md` to the project.
+- Smart Init (Auto-discovery): `init` command now automatically detects `.csproj`, `package.json`, and `Directory.Build.props`.
+- Continuous Discovery: `init` is now additive, and `status` warns about untracked components.
+- Fragment Validation: New `validate` command to lint unreleased fragments.
+- Custom Categories: Support for user-defined categories and custom SemVer impact mappings in `changesharp.json`.
 
 ### Changed
 - Refined Roadmap structure (UX improvements and better ordering).
