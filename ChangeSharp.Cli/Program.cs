@@ -111,14 +111,54 @@ class Program
         rootCommand.Add(statusCommand);
 
         // release command
-        var releaseCommand = new Command("release", "Aggregate fragments, bump version, update CHANGELOG.md, and clean up.");
-        releaseCommand.SetAction(_ =>
+        var dryRunOption = new Option<bool>("--dry-run", "Display what would happen without making any changes.");
+        var releaseCommand = new Command("release", "Aggregate fragments, bump version, update CHANGELOG.md, and clean up.")
         {
+            dryRunOption
+        };
+        releaseCommand.SetAction(parseResult =>
+        {
+            bool dryRun = parseResult.GetValue(dryRunOption);
             try
             {
                 var manager = new WorkspaceManager();
-                string nextVersion = manager.Release(DateTime.Today);
-                Console.WriteLine($"Release successful! New version: {nextVersion}");
+                if (dryRun)
+                {
+                    manager.GetStatus(out int count, out ChangeSet merged, out string current, out string next);
+                    
+                    if (count == 0)
+                    {
+                        Console.WriteLine("No unreleased fragments found. Nothing to release.");
+                        return;
+                    }
+
+                    Console.WriteLine("[Dry Run] Release would perform the following actions:");
+                    Console.WriteLine($"- Update CHANGELOG.md with a new version section: [{next}]");
+                    Console.WriteLine($"- Add the following changes to CHANGELOG.md:");
+                    Console.WriteLine(merged.ToChangelogString());
+                    Console.WriteLine($"- Delete {count} fragment(s) from the unreleased directory.");
+                    
+                    var targets = manager.GetEffectiveVersionTargets().ToList();
+                    if (targets.Any())
+                    {
+                        Console.WriteLine($"- Propagate version {next} to the following files:");
+                        foreach (var target in targets)
+                        {
+                            Console.WriteLine($"  * {target}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("- No version propagation targets configured.");
+                    }
+                    Console.WriteLine();
+                    Console.WriteLine("[Dry Run] No files were actually modified.");
+                }
+                else
+                {
+                    string nextVersion = manager.Release(DateTime.Today, dryRun);
+                    Console.WriteLine($"Release successful! New version: {nextVersion}");
+                }
             }
             catch (Exception ex)
             {

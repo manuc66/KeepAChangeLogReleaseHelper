@@ -124,7 +124,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         nextVersion = NextVersionComputer.ComputeVersion(currentVersion, mergedChangeSet);
     }
 
-    public string Release(DateTime releaseDate)
+    public string Release(DateTime releaseDate, bool dryRun = false)
     {
         var config = LoadConfig();
         string unreleasedPath = Path.Combine(_basePath, config.UnreleasedDir);
@@ -135,6 +135,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         if (fragmentCount == 0)
         {
             throw new InvalidOperationException("No unreleased fragments found to release.");
+        }
+
+        if (dryRun)
+        {
+            return nextVersion;
         }
 
         string changelogContent = File.Exists(changelogPath)
@@ -169,14 +174,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         return nextVersion;
     }
 
+    public IEnumerable<string> GetEffectiveVersionTargets()
+    {
+        var config = LoadConfig();
+        var handlers = GetHandlers();
+        
+        foreach (var target in config.VersionTargets)
+        {
+            var handler = handlers.FirstOrDefault(h => h.CanHandle(target));
+            if (handler != null)
+            {
+                yield return target.Path;
+            }
+        }
+    }
+
     private void PropagateVersion(ChangeSharpConfig config, string nextVersion)
     {
-        var handlers = new List<IVersionPropagationHandler>
-        {
-            new MSBuildVersionHandler(),
-            new JsonVersionHandler(),
-            new RegexVersionHandler()
-        };
+        var handlers = GetHandlers();
 
         foreach (var target in config.VersionTargets)
         {
@@ -186,6 +201,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                 handler.UpdateVersion(_basePath, target, nextVersion);
             }
         }
+    }
+
+    private static List<IVersionPropagationHandler> GetHandlers()
+    {
+        return new List<IVersionPropagationHandler>
+        {
+            new MSBuildVersionHandler(),
+            new JsonVersionHandler(),
+            new RegexVersionHandler()
+        };
     }
 
     public ChangeSharpConfig LoadConfig()
