@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using ChangeSharp.VersionPropagation;
 
 namespace ChangeSharp;
 
@@ -162,7 +163,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             File.Delete(file);
         }
 
+        // Propagate version to targets
+        PropagateVersion(config, nextVersion);
+
         return nextVersion;
+    }
+
+    private void PropagateVersion(ChangeSharpConfig config, string nextVersion)
+    {
+        var handlers = new List<IVersionPropagationHandler>
+        {
+            new MSBuildVersionHandler(),
+            new JsonVersionHandler(),
+            new RegexVersionHandler()
+        };
+
+        foreach (var target in config.VersionTargets)
+        {
+            var handler = handlers.FirstOrDefault(h => h.CanHandle(target));
+            if (handler != null)
+            {
+                handler.UpdateVersion(_basePath, target, nextVersion);
+            }
+        }
     }
 
     public ChangeSharpConfig LoadConfig()
