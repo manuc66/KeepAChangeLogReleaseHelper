@@ -166,6 +166,80 @@ class Program
             }
         });
         rootCommand.Add(releaseCommand);
+        
+        // prerelease command
+        var branchOption  = new Option<string>("--branch", "Specific branch name to use for pre-release.");
+        var listOption    = new Option<bool>("--list", "List all active pre-releases.");
+        var promoteOption = new Option<bool>("--promote", "Promote the latest pre-release to a final release.");
+        var channelOption = new Option<string>("--channel", "Optional release channel (e.g. alpha, beta, rc).");
+        
+        var prereleaseCommand = new Command("prerelease", "Handle pre-release versions based on branches.")
+        {
+            branchOption,
+            listOption,
+            promoteOption,
+            channelOption,
+            dryRunOption
+        };
+
+        prereleaseCommand.SetAction(parseResult =>
+        {
+            string? branch = parseResult.GetValue(branchOption);
+            bool list      = parseResult.GetValue(listOption);
+            bool promote   = parseResult.GetValue(promoteOption);
+            string? channel = parseResult.GetValue(channelOption);
+            bool dryRun    = parseResult.GetValue(dryRunOption);
+
+            try
+            {
+                var manager = new WorkspaceManager();
+                if (list)
+                {
+                    var listPrereleases = manager.ListPrereleases();
+                    if (!listPrereleases.Any())
+                    {
+                        Console.WriteLine("No active pre-releases found.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Active pre-releases:");
+                        foreach (var info in listPrereleases)
+                        {
+                            Console.WriteLine($"- {info.Version} (Branch: {info.Branch}, Date: {info.Timestamp:yyyy-MM-dd HH:mm:ss})");
+                        }
+                    }
+                }
+                else if (promote)
+                {
+                    string finalVersion = manager.PromotePrerelease(branch, dryRun);
+                    if (dryRun)
+                    {
+                        Console.WriteLine($"[Dry Run] Would promote to version: {finalVersion}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Promotion successful! New version: {finalVersion}");
+                    }
+                }
+                else
+                {
+                    string prereleaseVersion = manager.CreatePrerelease(branch, channel, dryRun);
+                    if (dryRun)
+                    {
+                        Console.WriteLine($"[Dry Run] Would create pre-release: {prereleaseVersion}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Pre-release created successfully: {prereleaseVersion}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: {ex.Message}");
+            }
+        });
+        rootCommand.Add(prereleaseCommand);
 
         ParseResult parseResult = rootCommand.Parse(args);
         return await parseResult.InvokeAsync();

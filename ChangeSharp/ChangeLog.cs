@@ -53,11 +53,16 @@ public class ChangeLog
 
     public ChangeLog Release(DateTime dateTime, params string[] changesets )
     {
+        return ReleaseWithVersion(dateTime, null, changesets);
+    }
+
+    public ChangeLog ReleaseWithVersion(DateTime dateTime, string? forcedVersion, params string[] changesets)
+    {
         ChangeSet unreleasedChanges = ChangeSetMerger.Merge(changesets);
 
         List<string> beforeUnreleased = Parse(out List<string> afterUnreleased, out string lastRelease);
 
-        string newVersion = NextVersionComputer.ComputeVersion(lastRelease, unreleasedChanges);
+        string newVersion = forcedVersion ?? NextVersionComputer.ComputeVersion(lastRelease, unreleasedChanges);
 
         string newContent = string.Join(Environment.NewLine,
             beforeUnreleased.Concat(new[]
@@ -75,7 +80,7 @@ public class ChangeLog
 
     private List<string> Parse(out List<string> afterUnreleased, out string lastRelease)
     {
-        string[] lines = _content.Split(Environment.NewLine);
+        string[] lines = _content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
 
         List<string> beforeUnreleased = lines.TakeWhile(x => !x.StartsWith("## [Unreleased]") && !x.StartsWith("## [")).ToList();
 
@@ -89,20 +94,20 @@ public class ChangeLog
             afterUnreleased = lines.Skip(beforeUnreleased.Count).ToList(); 
         }
         
-        string? lastReleaseLine = afterUnreleased.Count > 1 ? afterUnreleased[0] : null;
+        string? lastReleaseLine = afterUnreleased.Count > 0 ? afterUnreleased[0] : null;
 
         string? tempLastRelease = null;
         if (lastReleaseLine != null)
         {
-            int indexOfEndVersion = lastReleaseLine.IndexOf("]", StringComparison.Ordinal) - 1;
-            if (indexOfEndVersion > 4)
+            // Extract version from ## [version] - date
+            var match = System.Text.RegularExpressions.Regex.Match(lastReleaseLine, @"##\s*\[(.*?)\]");
+            if (match.Success)
             {
-                tempLastRelease = lastReleaseLine.Substring(4, indexOfEndVersion - 4 + 1);
+                tempLastRelease = match.Groups[1].Value;
             }
         }
 
         tempLastRelease ??= "0.0.0";
-
         lastRelease = tempLastRelease;
 
         return beforeUnreleased;
