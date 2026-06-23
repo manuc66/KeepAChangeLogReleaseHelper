@@ -5,6 +5,12 @@ namespace ChangeSharp.Cli;
 
 class Program
 {
+    private const int ExitCodeSuccess = 0;
+    private const int ExitCodeGenericError = 1;
+    private const int ExitCodeNoChanges = 2;
+    private const int ExitCodeValidationError = 3;
+    private const int ExitCodeConflict = 4;
+
     static async Task<int> Main(string[] args)
     {
         var rootCommand = new RootCommand("ChangeSharp - Keep a Changelog. Derive the version.");
@@ -18,10 +24,12 @@ class Program
                 var manager = new WorkspaceManager();
                 manager.Initialize();
                 Console.WriteLine("ChangeSharp workspace initialized successfully.");
+                return ExitCodeSuccess;
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Error: {ex.Message}");
+                return ExitCodeGenericError;
             }
         });
         rootCommand.Add(initCommand);
@@ -64,7 +72,7 @@ class Program
             if (string.IsNullOrWhiteSpace(message))
             {
                 Console.Error.WriteLine("Error: Description is required.");
-                return;
+                return ExitCodeValidationError;
             }
 
             string category;
@@ -98,10 +106,12 @@ class Program
                 var manager = new WorkspaceManager();
                 string filePath = manager.CreateFragment(message, category);
                 Console.WriteLine($"Created fragment: {Path.GetFileName(filePath)} under category '{category}'");
+                return ExitCodeSuccess;
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Error: {ex.Message}");
+                return ExitCodeGenericError;
             }
         });
         rootCommand.Add(newCommand);
@@ -124,36 +134,46 @@ class Program
                     Console.WriteLine();
                     Console.WriteLine($"Computed Version Bump: {current} -> {next}");
                 }
+                return ExitCodeSuccess;
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Error: {ex.Message}");
+                return ExitCodeGenericError;
             }
         });
         rootCommand.Add(statusCommand);
 
         // release command
         var dryRunOption = new Option<bool>("--dry-run") { Description = "Display what would happen without making any changes." };
+        var allowEmptyOption = new Option<bool>("--allow-empty") { Description = "Exit with success even if no unreleased fragments are found." };
         var releaseCommand = new Command("release", "Aggregate fragments, bump version, update CHANGELOG.md, and clean up.")
         {
-            dryRunOption
+            dryRunOption,
+            allowEmptyOption
         };
         releaseCommand.SetAction(parseResult =>
         {
             bool dryRun = parseResult.GetValue(dryRunOption);
+            bool allowEmpty = parseResult.GetValue(allowEmptyOption);
             try
             {
                 var manager = new WorkspaceManager();
+                manager.GetStatus(out int count, out ChangeSet merged, out string current, out string next);
+                
+                if (count == 0)
+                {
+                    if (allowEmpty)
+                    {
+                        Console.WriteLine("No unreleased fragments found. --allow-empty specified, exiting with success.");
+                        return ExitCodeSuccess;
+                    }
+                    Console.Error.WriteLine("Error: No unreleased fragments found. Nothing to release.");
+                    return ExitCodeNoChanges;
+                }
+
                 if (dryRun)
                 {
-                    manager.GetStatus(out int count, out ChangeSet merged, out string current, out string next);
-                    
-                    if (count == 0)
-                    {
-                        Console.WriteLine("No unreleased fragments found. Nothing to release.");
-                        return;
-                    }
-
                     Console.WriteLine("[Dry Run] Release would perform the following actions:");
                     Console.WriteLine($"- Update CHANGELOG.md with a new version section: [{next}]");
                     Console.WriteLine($"- Add the following changes to CHANGELOG.md:");
@@ -181,10 +201,17 @@ class Program
                     string nextVersion = manager.Release(DateTime.Today, dryRun);
                     Console.WriteLine($"Release successful! New version: {nextVersion}");
                 }
+                return ExitCodeSuccess;
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Conflict"))
+            {
+                Console.Error.WriteLine($"Conflict Error: {ex.Message}");
+                return ExitCodeConflict;
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Error: {ex.Message}");
+                return ExitCodeGenericError;
             }
         });
         rootCommand.Add(releaseCommand);
@@ -255,10 +282,17 @@ class Program
                         Console.WriteLine($"Pre-release created successfully: {prereleaseVersion}");
                     }
                 }
+                return ExitCodeSuccess;
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Conflict"))
+            {
+                Console.Error.WriteLine($"Conflict Error: {ex.Message}");
+                return ExitCodeConflict;
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Error: {ex.Message}");
+                return ExitCodeGenericError;
             }
         });
         rootCommand.Add(prereleaseCommand);

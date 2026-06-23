@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Documented architecture with a three-layer model (Core, CLI, MCP).
 - Established CLI as the source of truth for automation.
-- Documented exit codes contract for CI/CD.
-- Defined deterministic fragment naming strategy.
-- Updated SemVer rules: `Changed` now defaults to `Major` (configurable).
+- Documented and implemented exit codes contract for CI/CD.
+- Defined and implemented deterministic fragment naming strategy.
+- Updated SemVer rules: `Changed` now defaults to `Major` (configurable via `SemverPolicy`).
+- Implemented robust, transactional release process using a temporary `releasing` directory to handle interruptions.
+- Added `--allow-empty` to `release` command.
 - Self-hosting: Added this `CHANGELOG.md` to the project.
 
 ### Changed

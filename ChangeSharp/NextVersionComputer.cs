@@ -11,8 +11,10 @@ public class NextVersionComputer
         return ComputeVersion(currentVersion, changeSet);
     }
 
-    public static string ComputeVersion(string currentVersion, ChangeSet changeSet)
+    public static string ComputeVersion(string currentVersion, ChangeSet changeSet, SemverPolicyConfig? policy = null)
     {
+        policy ??= new SemverPolicyConfig();
+        
         string prefix = "";
         string versionString = currentVersion;
         if (currentVersion.StartsWith("v", StringComparison.OrdinalIgnoreCase))
@@ -29,22 +31,32 @@ public class NextVersionComputer
 
         SemVersion nextVersion;
 
-        // Determine the next version based on the changes
-        if (changeSet.Breaking.Count > 0 || changeSet.Removed.Count > 0)
+        // Determine the impact for each section
+        int maxImpact = 0; // 0=None, 1=Patch, 2=Minor, 3=Major
+        
+        if (changeSet.Breaking.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Breaking));
+        if (changeSet.Removed.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Removed));
+        if (changeSet.Changed.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Changed));
+        if (changeSet.Added.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Added));
+        if (changeSet.Deprecated.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Deprecated));
+        if (changeSet.Fixed.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Fixed));
+        if (changeSet.Security.Count > 0) maxImpact = Math.Max(maxImpact, ParseImpact(policy.Security));
+
+        if (maxImpact == 3) // Major
         {
             if (version.IsPrerelease && version.Minor == 0 && version.Patch == 0)
                 nextVersion = new SemVersion(version.Major, 0, 0);
             else
                 nextVersion = new SemVersion(version.Major + 1, 0, 0);
         }
-        else if (changeSet.Changed.Count > 0 || changeSet.Added.Count > 0 || changeSet.Deprecated.Count > 0)
+        else if (maxImpact == 2) // Minor
         {
             if (version.IsPrerelease && version.Patch == 0)
                 nextVersion = new SemVersion(version.Major, version.Minor, 0);
             else
                 nextVersion = new SemVersion(version.Major, version.Minor + 1, 0);
         }
-        else if (changeSet.Fixed.Count > 0 || changeSet.Security.Count > 0)
+        else if (maxImpact == 1) // Patch
         {
             if (version.IsPrerelease)
                 nextVersion = new SemVersion(version.Major, version.Minor, version.Patch);
@@ -59,7 +71,18 @@ public class NextVersionComputer
         return $"{prefix}{nextVersion}";
     }
 
-    public static string ComputePrereleaseVersion(string currentVersion, ChangeSet changeSet, string identifier, int counter)
+    private static int ParseImpact(string impact)
+    {
+        return impact.ToLowerInvariant() switch
+        {
+            "major" => 3,
+            "minor" => 2,
+            "patch" => 1,
+            _ => 0
+        };
+    }
+
+    public static string ComputePrereleaseVersion(string currentVersion, ChangeSet changeSet, string identifier, int counter, SemverPolicyConfig? policy = null)
     {
         string prefix = "";
         string versionString = currentVersion;
@@ -87,7 +110,7 @@ public class NextVersionComputer
 
         // Calculate what the NEXT stable version would be based on fragments
         string baseVersionString = $"{prefix}{baseVersion}";
-        string nextStable = ComputeVersion(baseVersionString, changeSet);
+        string nextStable = ComputeVersion(baseVersionString, changeSet, policy);
         
         // Strip prefix from nextStable for SemVersion parsing
         string nextStableStripped = nextStable;

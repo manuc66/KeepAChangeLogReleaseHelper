@@ -46,6 +46,13 @@ public class WorkspaceManager
             Directory.CreateDirectory(prereleasesPath);
         }
 
+        // 2c. Create releasing directory
+        string releasingPath = Path.Combine(_basePath, config.ReleasingDir);
+        if (!Directory.Exists(releasingPath))
+        {
+            Directory.CreateDirectory(releasingPath);
+        }
+
         // 3. Create default CHANGELOG.md if it doesn't exist
         string changelogPath = Path.Combine(_basePath, config.ChangelogPath);
         if (!File.Exists(changelogPath))
@@ -95,17 +102,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     {
         var config = LoadConfig();
         string unreleasedPath = Path.Combine(_basePath, config.UnreleasedDir);
+        string releasingPath = Path.Combine(_basePath, config.ReleasingDir);
         
-        var fragments = Directory.Exists(unreleasedPath)
+        var unreleasedFragments = Directory.Exists(unreleasedPath)
             ? Directory.GetFiles(unreleasedPath, "*.md")
             : Array.Empty<string>();
 
-        fragmentCount = fragments.Length;
+        var releasingFragments = Directory.Exists(releasingPath)
+            ? Directory.GetFiles(releasingPath, "*.md")
+            : Array.Empty<string>();
+
+        var allFragments = unreleasedFragments.Concat(releasingFragments).ToArray();
+        fragmentCount = allFragments.Length;
 
         var parser = new ChangelogParser();
         var changeSets = new List<ChangeSet>();
 
-        foreach (var file in fragments)
+        foreach (var file in allFragments)
         {
             string fileContent = File.ReadAllText(file, Encoding.UTF8);
             changeSets.Add(parser.Parse(fileContent));
@@ -115,45 +128,123 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             ? changeSets.Aggregate(new ChangeSet(), (a, b) => a.Merge(b))
             : new ChangeSet();
 
-        // Load current version from CHANGELOG.md
-        string changelogPath = Path.Combine(_basePath, config.ChangelogPath);
-        if (File.Exists(changelogPath))
-        {
-            string changelogContent = File.ReadAllText(changelogPath, Encoding.UTF8);
-            var changeLog = new ChangeLog(changelogContent);
-            currentVersion = changeLog.LastVersion;
-        }
-        else
-        {
-            currentVersion = "0.0.0";
-        }
-
-        nextVersion = NextVersionComputer.ComputeVersion(currentVersion, mergedChangeSet);
+        currentVersion = GetCurrentVersion(config);
+        nextVersion = NextVersionComputer.ComputeVersion(currentVersion, mergedChangeSet, config.SemverPolicy);
     }
 
     public string Release(DateTime releaseDate, bool dryRun = false, string? forcedVersion = null)
     {
         var config = LoadConfig();
         string unreleasedPath = Path.Combine(_basePath, config.UnreleasedDir);
+        string releasingPath = Path.Combine(_basePath, config.ReleasingDir);
         string changelogPath = Path.Combine(_basePath, config.ChangelogPath);
-
-        GetStatus(out int fragmentCount, out ChangeSet mergedChangeSet, out string currentVersion, out string nextVersion);
-
-        if (forcedVersion != null) nextVersion = forcedVersion;
-
-        if (fragmentCount == 0)
-        {
-            throw new InvalidOperationException("No unreleased fragments found to release.");
-        }
 
         if (dryRun)
         {
-            return nextVersion;
+            GetStatus(out int count, out ChangeSet merged, out string current, out string next);
+            if (forcedVersion != null) next = forcedVersion;
+            if (count == 0) throw new InvalidOperationException("No unreleased fragments found to release.");
+            return next;
         }
 
-        string changelogContent = File.Exists(changelogPath)
-            ? File.ReadAllText(changelogPath, Encoding.UTF8)
-            : @"# Changelog
+        // 1. Transactional check & move
+        string[] fragments;
+        bool resumed = false;
+        
+        if (Directory.Exists(releasingPath) && Directory.GetFiles(releasingPath, "*.md").Length > 0)
+        {
+            fragments = Directory.GetFiles(releasingPath, "*.md");
+            resumed = true;
+        }
+        else
+        {
+            var unreleasedFragments = Directory.Exists(unreleasedPath)
+                ? Directory.GetFiles(unreleasedPath, "*.md")
+                : Array.Empty<string>();
+
+            if (unreleasedFragments.Length == 0)
+            {
+                throw new InvalidOperationException("No unreleased fragments found to release.");
+            }
+
+            if (!Directory.Exists(releasingPath)) Directory.CreateDirectory(releasingPath);
+            foreach (var f in unreleasedFragments)
+            {
+                File.Move(f, Path.Combine(releasingPath, Path.GetFileName(f)));
+            }
+            fragments = Directory.GetFiles(releasingPath, "*.md");
+        }
+
+        // 2. Compute release data
+        var parser = new ChangelogParser();
+        var changeSets = fragments.Select(f => parser.Parse(File.ReadAllText(f, Encoding.UTF8))).ToList();
+        var mergedChangeSet = changeSets.Aggregate(new ChangeSet(), (a, b) => a.Merge(b));
+        
+        string currentVersion = GetCurrentVersion(config);
+        
+        // 3. Update CHANGELOG.md
+        string changelogContent = File.Exists(changelogPath) 
+            ? File.ReadAllText(changelogPath, Encoding.UTF8) 
+            : GetDefaultChangelog();
+            
+        var changeLog = new ChangeLog(changelogContent);
+        string nextVersion;
+
+        // Check if current version already contains these changes (resumed run)
+        string? currentContent = changeLog.GetVersionContent(currentVersion);
+        if (currentVersion != "0.0.0" && currentContent != null && currentContent == mergedChangeSet.ToChangelogString().Trim())
+        {
+            nextVersion = currentVersion;
+            // Already updated in a previous interrupted run, skip update
+        }
+        else
+        {
+            nextVersion = forcedVersion ?? NextVersionComputer.ComputeVersion(currentVersion, mergedChangeSet, config.SemverPolicy);
+            
+            string? existingContent = changeLog.GetVersionContent(nextVersion);
+            if (existingContent != null && existingContent == mergedChangeSet.ToChangelogString().Trim())
+            {
+                // This covers the case where nextVersion was already created but is not currentVersion 
+                // (shouldn't happen with standard logic but good for robustness)
+            }
+            else if (existingContent != null)
+            {
+                throw new InvalidOperationException($"Conflict: Version {nextVersion} already exists in {config.ChangelogPath} but with different content. Manual intervention required.");
+            }
+            else
+            {
+                var updatedChangelog = changeLog.ReleaseWithVersion(releaseDate, nextVersion, mergedChangeSet.ToChangelogString());
+                File.WriteAllText(changelogPath, updatedChangelog.ToString(), Encoding.UTF8);
+            }
+        }
+
+        // 4. Cleanup processed fragments
+        foreach (var file in fragments)
+        {
+            File.Delete(file);
+        }
+
+        // 5. Propagate version to targets
+        PropagateVersion(config, nextVersion);
+
+        return nextVersion;
+    }
+
+    private string GetCurrentVersion(ChangeSharpConfig config)
+    {
+        string changelogPath = Path.Combine(_basePath, config.ChangelogPath);
+        if (File.Exists(changelogPath))
+        {
+            string changelogContent = File.ReadAllText(changelogPath, Encoding.UTF8);
+            var changeLog = new ChangeLog(changelogContent);
+            return changeLog.LastVersion;
+        }
+        return "0.0.0";
+    }
+
+    private string GetDefaultChangelog()
+    {
+        return @"# Changelog
 
 All notable changes to this project will be documented in this file.
 
@@ -162,25 +253,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ";
-
-        var changeLog = new ChangeLog(changelogContent);
-        // Release creates the new version segment and updates Unreleased section
-        var updatedChangelog = changeLog.ReleaseWithVersion(releaseDate, forcedVersion, mergedChangeSet.ToChangelogString());
-
-        // Save updated changelog
-        File.WriteAllText(changelogPath, updatedChangelog.ToString(), Encoding.UTF8);
-
-        // Delete processed unreleased fragments
-        var fragments = Directory.GetFiles(unreleasedPath, "*.md");
-        foreach (var file in fragments)
-        {
-            File.Delete(file);
-        }
-
-        // Propagate version to targets
-        PropagateVersion(config, nextVersion);
-
-        return nextVersion;
     }
 
     public IEnumerable<string> GetEffectiveVersionTargets()
@@ -272,7 +344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             catch { /* Ignore corrupt info */ }
         }
 
-        string nextPrerelease = NextVersionComputer.ComputePrereleaseVersion(current, merged, identifier, counter);
+        string nextPrerelease = NextVersionComputer.ComputePrereleaseVersion(current, merged, identifier, counter, config.SemverPolicy);
 
         if (dryRun) return nextPrerelease;
 

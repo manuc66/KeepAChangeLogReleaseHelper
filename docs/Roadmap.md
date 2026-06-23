@@ -2,17 +2,17 @@
 
 To build a reliable MVP, we will prioritize robust parsing, extensible configuration, and developer experience.
 
-### Step 1: Create the CLI (.NET Tool) & Error Contract
+### Step 1: Create the CLI (.NET Tool) & Error Contract (Completed)
 * Initialize `ChangeSharp.Cli` as a console application configured as a packable tool (`<PackAsTool>true</PackAsTool>`).
 * Set up command handling with `System.CommandLine`.
 * **Define Exit Codes Contract**: Establish stable exit codes (e.g., `0` for success, `1` for generic error, `2` for no changes to release). This is critical for CI/CD integration.
 * See [[ExitCodes|Exit Codes Specification]].
 
-### Step 2: Integrate Markdig (Early Parsing Layer)
+### Step 2: Integrate Markdig (Early Parsing Layer) (Completed)
 * Replace the manual line-by-line parser with **Markdig**.
 * This guarantees correct handling of rich Markdown elements (nested lists, code blocks, bold text) inside fragment sections right from the start, avoiding complex edge-case bug fixing later.
 
-### Step 3: Fragment Lifecycle & UX (Workflow)
+### Step 3: Fragment Lifecycle & UX (Workflow) (Completed)
 * **Initialize** (`changesharp init`): Sets up the configuration file and the `.changesharp/unreleased/` directory.
 * **Status** (`changesharp status`): Lists pending fragments, previews the calculated version bump, and shows config state. This feeds into `--dry-run` and MCP integration.
 * **New Fragment** (`changesharp new`): 
@@ -22,7 +22,7 @@ To build a reliable MVP, we will prioritize robust parsing, extensible configura
     * **Idempotence**: Implement a transaction-like strategy or state detection to handle crashes mid-release (e.g., after updating CHANGELOG but before archiving fragments).
     * Aggregate fragments, derive version, update targets, and archive consumed fragments.
 
-### Step 4: Config, Propagation & SemVer Policy
+### Step 4: Config, Propagation & SemVer Policy (Completed)
 * Provide standard target handlers (MSBuild, JSON, text/regex) via `changesharp.json`.
 * **SemVer Mapping**: Document and allow override of the `Changed` → `Major` policy. By default, "Changed" triggers a Major bump, but this must be configurable.
 * **Principle**: Step 4 ensures the tool is extensible via configuration rather than hardcoded logic.

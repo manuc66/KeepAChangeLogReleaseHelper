@@ -51,6 +51,33 @@ public class ChangeLog
         return _content;
     }
 
+    public string? GetVersionContent(string version)
+    {
+        string[] lines = _content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+        string headerPrefix = $"## [{version}]";
+        
+        int startIndex = -1;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].StartsWith(headerPrefix))
+            {
+                startIndex = i;
+                break;
+            }
+        }
+        
+        if (startIndex == -1) return null;
+        
+        var contentLines = new List<string>();
+        for (int i = startIndex + 1; i < lines.Length; i++)
+        {
+            if (lines[i].StartsWith("## ")) break;
+            contentLines.Add(lines[i]);
+        }
+        
+        return string.Join(Environment.NewLine, contentLines).Trim();
+    }
+
     public ChangeLog Release(DateTime dateTime, params string[] changesets )
     {
         return ReleaseWithVersion(dateTime, null, changesets);
