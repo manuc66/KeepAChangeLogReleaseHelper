@@ -83,3 +83,19 @@ To build a reliable MVP, we will prioritize robust parsing and extensible config
 ### Step 7: Pre-release and Version Prefix Support
 * Handle SemVer pre-release tags (e.g., `-beta.1`).
 * Support for `v` prefix in version numbers (e.g., `v1.2.3`).
+
+### Step 8: Interactive 'new' Command
+* Enhance the `new` command to prompt for a message and category if they are not provided via arguments.
+* Improve developer experience by making fragment creation as frictionless as possible.
+
+### Step 9: Smart Init (Auto-discovery)
+* Enhance the `init` command to scan the workspace for common project files (e.g., `.csproj`, `package.json`, `Directory.Build.props`).
+* Automatically suggest and add these as `VersionTargets` in `changesharp.json`.
+
+### Step 10: Fragment Validation and Linting
+* Add a `lint` or `validate` command to check if unreleased fragments follow the expected Markdown structure.
+* Ensure all fragments use recognized categories to avoid SemVer calculation errors.
+
+### Step 11: Custom Categories and Mappings
+* Allow users to define custom changelog categories in `changesharp.json`.
+* Enable mapping these custom categories to specific SemVer impacts (Major, Minor, or Patch).
