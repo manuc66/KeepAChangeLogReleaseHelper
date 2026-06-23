@@ -41,3 +41,13 @@ To further ensure that fragments never clash (even if two developers create a fr
 ```
 
 This makes the filename: `YYYYMMDD-HHmmss-[branch]-[slug].md`.
+
+## What about `changesharp.json`?
+
+You might wonder if the management file itself (`changesharp.json`) could be a source of conflicts. 
+
+The answer is **rarely**, and here is why:
+
+1. **Configuration vs. State**: Unlike a traditional `CHANGELOG.md` which changes with every commit, `changesharp.json` is a **configuration** file. It only changes when you add a new project to the workspace or change a versioning policy.
+2. **Deterministic Layout**: ChangeSharp automatically **sorts** the version targets by path. If Branch A adds `ProjectA.csproj` and Branch B adds `ProjectB.csproj`, they will be added at different locations in the JSON file, allowing Git to merge them automatically in most cases.
+3. **No Incremental State**: The "state" of your pending release is stored in the `unreleased/` directory, not in the JSON file. This is the key to avoiding the "version race" common in other tools.

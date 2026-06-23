@@ -47,6 +47,11 @@ public class WorkspaceManager
 
         if (isNewConfig || newTargets.Any())
         {
+            // Sort targets by path to ensure deterministic JSON and minimize merge conflicts
+            config.VersionTargets = config.VersionTargets
+                .OrderBy(t => t.Path, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
             var options = new JsonSerializerOptions { WriteIndented = true };
             string json = JsonSerializer.Serialize(config, options);
             File.WriteAllText(ConfigFilePath, json, Encoding.UTF8);

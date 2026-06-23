@@ -306,4 +306,27 @@ public class WorkspaceManagerTests
         Assert.That(filename.Length, Is.EqualTo(14 + 1 + "test-message".Length + 3));
         Assert.That(filename, Does.EndWith("-test-message.md"));
     }
+
+    [Test]
+    public void Initialize_SortsVersionTargets_Alphabetically()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        
+        // Create projects in non-alphabetical order
+        File.WriteAllText(Path.Combine(_testDir, "Z_Project.csproj"), "<Project />");
+        File.WriteAllText(Path.Combine(_testDir, "A_Project.csproj"), "<Project />");
+        File.WriteAllText(Path.Combine(_testDir, "M_Project.csproj"), "<Project />");
+        
+        manager.Initialize();
+        
+        string configJson = File.ReadAllText(Path.Combine(_testDir, "changesharp.json"));
+        
+        // Check order in JSON string
+        int indexA = configJson.IndexOf("A_Project.csproj");
+        int indexM = configJson.IndexOf("M_Project.csproj");
+        int indexZ = configJson.IndexOf("Z_Project.csproj");
+        
+        Assert.That(indexA, Is.LessThan(indexM));
+        Assert.That(indexM, Is.LessThan(indexZ));
+    }
 }
