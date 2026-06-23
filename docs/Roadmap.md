@@ -105,12 +105,16 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
 * Symbolically important for a tool promoting this practice.
 
 ### Step 13: ChangeSharp Bot for Pull Requests (Priority 2)
-* **Goal**: Increase viral adoption and ensure fragment quality during the PR phase.
-* **Features**:
-    * Check if a PR/MR contains a new fragment file.
-    * Validate fragment format on-the-fly.
-    * Post a comment with the predicted version bump and a summary of changes.
-    * Support GitHub Apps and GitLab Webhooks.
+* **Goal**: Ensure fragment quality and provide visibility into release impact during the PR phase.
+* **Phase 1: CI-Native Bot (GitHub Actions/GitLab CI)**:
+    * Implement a lightweight script/action that runs `changesharp validate`.
+    * Post PR comments using standard CI tokens.
+    * No external infrastructure required.
+* **Phase 2: Full ChangeSharp App (Marketplace)**:
+    * Build a dedicated GitHub App / GitLab Webhook service.
+    * Support OAuth, webhook signature validation, and multi-repo management.
+    * Provide a seamless "Install" experience from the marketplace.
+* See [[Features/CiIntegration|CI/CD Integration Contract]].
 
 ### Step 14: Polyglot Support & First-Class Handlers (Priority 3)
 * **Goal**: Move beyond "survivability" for non-.NET projects.
@@ -122,6 +126,7 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
 ### Step 15: Enterprise Security & Approval Gates (Completed)
 * **Dry-run enforcement**: Implement a mandatory `--dry-run` or `--require-approval` flag for MCP `perform_release` tool.
 * Ensure AI agents cannot trigger a production release without an explicit human gate in the loop.
+* See [[Features/ApprovalGates|Enterprise Security & Approval Gates]].
 
 ### Step 16: Repository Intelligence for Agents (Priority 2)
 * **Goal**: Allow AI agents to understand what has changed in the codebase since the last release, even if fragments are missing.
@@ -136,3 +141,13 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
     * Integrate with API surface tracking tools (e.g., `PublicApiGenerator` for .NET, Swagger diff for APIs).
     * **Cross-verification**: Fail the `validate` or `release` command if a fragment says `### Fixed` (Patch) but a public method signature was deleted (Major).
     * Provide "Fix-it" suggestions: "You've made a breaking change, please move this fragment to 'Breaking Changes' or 'Removed'."
+* See [[Features/SemanticValidation|Semantic Validation Safety Gate]].
+
+### Step 18: Multi-Team Monorepo Scoping (Priority 2)
+* **Goal**: Support large-scale enterprise monorepos with independent team policies.
+* **Actions**:
+    * **Config Hierarchies**: Allow `changesharp.json` to be placed in subdirectories, overriding global settings for that scope.
+    * **Scoped Fragments**: Support `.changesharp/` directories per service/sub-project.
+    * **Service-Specific Changelogs**: Generate independent `CHANGELOG.md` files for different parts of the repository.
+    * **Policy Overrides**: Team A might want `Changed -> Major` while Team B wants `Changed -> Minor`.
+* See [[features/MonorepoSupport|Multi-Team Monorepo Support]].

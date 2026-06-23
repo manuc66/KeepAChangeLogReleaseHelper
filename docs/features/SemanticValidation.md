@@ -47,6 +47,23 @@ In `changesharp.json`, you can define your validation command:
 }
 ```
 
+## Reliability & Environment Control
+
+In enterprise CI runners, external tools might not always be available or properly configured. ChangeSharp follows a strict reliability contract for the Semantic Gate:
+
+### ⚙️ Behavior on Tool Failure
+
+You can configure how ChangeSharp reacts if an external analyzer fails or is missing via the `Mode` setting:
+
+-   **`Enforce` (Default)**: If the tool is missing or returns a non-zero exit code, ChangeSharp will exit with **Exit Code 1**. This prevents accidental releases when the safety gate is broken.
+-   **`Warn`**: ChangeSharp will display a warning but proceed with the validation/release. Useful during migrations or if the tool is flaky.
+-   **`Disabled`**: The gate is completely skipped.
+
+### 🔍 Tool Availability Check
+
+ChangeSharp performs a "Pre-flight Check" before running the gate. If `Tool` is not found in the `PATH`, it will fail immediately with a descriptive error:
+`Error: Semantic Validation tool 'openapi-diff' not found in PATH. Ensure it is installed in your CI runner.`
+
 ## Continuous Integration
 
 This gate is intended to be run:

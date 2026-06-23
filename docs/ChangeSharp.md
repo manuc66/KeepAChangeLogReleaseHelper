@@ -12,13 +12,16 @@
 * [[ChangeSharp#Strategic Positioning|Strategic Positioning]]
 * [[SemVer Rules|SemVer Derivation Rules]] - How fragments impact versioning.
 * [[features/SemanticValidation|Semantic Safety Gates]] - Cross-verifying code vs fragments.
+* [[features/ApprovalGates|Approval Gates]] - Security and human-in-the-loop.
 
 ### 🛠️ Development & Roadmap
 * [[Architecture|Codebase Analysis]] - Technical overview of the project.
 * [[Roadmap]] - Completed and planned steps.
+* [[features/CiIntegration|CI/CD Integration]] - Step 6 details and exit codes.
 
 ### ✨ Key Features
 * [[Features/Prereleases|Pre-release & Branching]] - Detailed spec for SemVer pre-releases.
+* [[features/MonorepoSupport|Monorepo Support]] - Multi-team hierarchical configuration.
 
 ---
 
