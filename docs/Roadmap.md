@@ -49,3 +49,57 @@ To build a reliable MVP, we will prioritize robust parsing and extensible config
 ### Step 11: Custom Categories and Mappings
 * Allow users to define custom changelog categories in `changesharp.json`.
 * Enable mapping these custom categories to specific SemVer impacts (Major, Minor, or Patch).
+
+### Step 12: AI Automation Layer (CLI + MCP)
+
+#### Goal
+
+Make ChangeSharp fully automation-ready for CI/CD systems and AI agents without adding complexity to the core system.
+
+---
+
+#### Approach
+
+ChangeSharp uses a **two-layer automation model**:
+
+**1. CLI (primary interface)**
+
+* JSON-first output (`--json`)
+* deterministic, machine-readable results
+* used by CI/CD and scripts
+* contains all business logic via the core library
+
+**2. MCP (AI adapter layer)**
+
+* lightweight STDIO-based MCP server
+* no business logic duplication
+* acts as a thin wrapper over the CLI or core library
+* exposes ChangeSharp features to AI agents (Cursor, Copilot, Claude, etc.)
+
+---
+
+#### Architecture
+
+```
+ChangeSharp.Core   → business logic
+        ↑
+ChangeSharp.CLI    → JSON-first automation interface
+        ↑
+ChangeSharp.MCP    → AI/tooling adapter (STDIO)
+```
+
+---
+
+#### Key Principle
+
+> The CLI is the source of truth for automation.
+> MCP is only an interface layer for AI agents.
+
+---
+
+#### Why this design
+
+* No duplication of versioning logic
+* Works natively in CI/CD environments
+* Easy integration with AI coding agents
+* Simple to extend toward HTTP MCP later if needed

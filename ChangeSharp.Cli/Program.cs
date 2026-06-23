@@ -29,16 +29,17 @@ class Program
         // new command
         var messageArgument = new Argument<string>("message")
         {
-            Description = "Description of the changes."
+            Description = "Description of the changes.",
+            Arity = ArgumentArity.ZeroOrOne
         };
         
-        var addedOption     = new Option<bool>("--added",      "Mark change as Added.");
-        var changedOption   = new Option<bool>("--changed",    "Mark change as Changed.");
-        var fixedOption     = new Option<bool>("--fixed",      "Mark change as Fixed.");
-        var removedOption   = new Option<bool>("--removed",    "Mark change as Removed.");
-        var deprecatedOption= new Option<bool>("--deprecated", "Mark change as Deprecated.");
-        var securityOption  = new Option<bool>("--security",   "Mark change as Security.");
-        var breakingOption  = new Option<bool>("--breaking",   "Mark change as Breaking Changes.");
+        var addedOption      = new Option<bool>("--added")      { Description = "Mark change as Added." };
+        var changedOption    = new Option<bool>("--changed")    { Description = "Mark change as Changed." };
+        var fixedOption      = new Option<bool>("--fixed")      { Description = "Mark change as Fixed." };
+        var removedOption    = new Option<bool>("--removed")    { Description = "Mark change as Removed." };
+        var deprecatedOption = new Option<bool>("--deprecated") { Description = "Mark change as Deprecated." };
+        var securityOption   = new Option<bool>("--security")   { Description = "Mark change as Security." };
+        var breakingOption   = new Option<bool>("--breaking")   { Description = "Mark change as Breaking Changes." };
 
         var newCommand = new Command("new", "Create a new unreleased changelog fragment.")
         {
@@ -54,22 +55,43 @@ class Program
 
         newCommand.SetAction(parseResult =>
         {
-            string message    = parseResult.GetValue(messageArgument)!;
-            bool added        = parseResult.GetValue(addedOption);
-            bool changed      = parseResult.GetValue(changedOption);
-            bool fixedOpt     = parseResult.GetValue(fixedOption);
-            bool removed      = parseResult.GetValue(removedOption);
-            bool deprecated   = parseResult.GetValue(deprecatedOption);
-            bool security     = parseResult.GetValue(securityOption);
-            bool breaking     = parseResult.GetValue(breakingOption);
+            string? message = parseResult.GetValue(messageArgument);
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = PromptForMessage();
+            }
 
-            string category = breaking    ? "Breaking Changes"
-                            : removed     ? "Removed"
-                            : changed     ? "Changed"
-                            : deprecated  ? "Deprecated"
-                            : fixedOpt    ? "Fixed"
-                            : security    ? "Security"
-                                          : "Added"; // default / --added
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                Console.Error.WriteLine("Error: Description is required.");
+                return;
+            }
+
+            string category;
+            bool added = parseResult.GetValue(addedOption);
+            bool changed = parseResult.GetValue(changedOption);
+            bool fixedOpt = parseResult.GetValue(fixedOption);
+            bool removed = parseResult.GetValue(removedOption);
+            bool deprecated = parseResult.GetValue(deprecatedOption);
+            bool security = parseResult.GetValue(securityOption);
+            bool breaking = parseResult.GetValue(breakingOption);
+
+            bool anyCategoryOptionProvided = added || changed || fixedOpt || removed || deprecated || security || breaking;
+
+            if (anyCategoryOptionProvided)
+            {
+                category = breaking ? "Breaking Changes"
+                                 : removed ? "Removed"
+                                 : changed ? "Changed"
+                                 : deprecated ? "Deprecated"
+                                 : fixedOpt ? "Fixed"
+                                 : security ? "Security"
+                                              : "Added";
+            }
+            else
+            {
+                category = PromptForCategory();
+            }
 
             try
             {
@@ -111,7 +133,7 @@ class Program
         rootCommand.Add(statusCommand);
 
         // release command
-        var dryRunOption = new Option<bool>("--dry-run", "Display what would happen without making any changes.");
+        var dryRunOption = new Option<bool>("--dry-run") { Description = "Display what would happen without making any changes." };
         var releaseCommand = new Command("release", "Aggregate fragments, bump version, update CHANGELOG.md, and clean up.")
         {
             dryRunOption
@@ -168,10 +190,10 @@ class Program
         rootCommand.Add(releaseCommand);
         
         // prerelease command
-        var branchOption  = new Option<string>("--branch", "Specific branch name to use for pre-release.");
-        var listOption    = new Option<bool>("--list", "List all active pre-releases.");
-        var promoteOption = new Option<bool>("--promote", "Promote the latest pre-release to a final release.");
-        var channelOption = new Option<string>("--channel", "Optional release channel (e.g. alpha, beta, rc).");
+        var branchOption  = new Option<string>("--branch") { Description = "Specific branch name to use for pre-release." };
+        var listOption    = new Option<bool>("--list") { Description = "List all active pre-releases." };
+        var promoteOption = new Option<bool>("--promote") { Description = "Promote the latest pre-release to a final release." };
+        var channelOption = new Option<string>("--channel") { Description = "Optional release channel (e.g. alpha, beta, rc)." };
         
         var prereleaseCommand = new Command("prerelease", "Handle pre-release versions based on branches.")
         {
@@ -243,5 +265,36 @@ class Program
 
         ParseResult parseResult = rootCommand.Parse(args);
         return await parseResult.InvokeAsync();
+    }
+
+    private static string? PromptForMessage()
+    {
+        Console.Write("Enter a description for the change: ");
+        return Console.ReadLine();
+    }
+
+    private static string PromptForCategory()
+    {
+        Console.WriteLine("Select a category for the change:");
+        Console.WriteLine("1. Added (New feature)");
+        Console.WriteLine("2. Changed (Modification of existing feature)");
+        Console.WriteLine("3. Fixed (Bug fix)");
+        Console.WriteLine("4. Removed (Removal of a feature)");
+        Console.WriteLine("5. Deprecated (Future removal warning)");
+        Console.WriteLine("6. Security (Security improvement)");
+        Console.WriteLine("7. Breaking Changes (Backward incompatible change)");
+        Console.Write("Selection (1-7, default 1): ");
+
+        string? input = Console.ReadLine();
+        return input switch
+        {
+            "2" => "Changed",
+            "3" => "Fixed",
+            "4" => "Removed",
+            "5" => "Deprecated",
+            "6" => "Security",
+            "7" => "Breaking Changes",
+            _ => "Added"
+        };
     }
 }
