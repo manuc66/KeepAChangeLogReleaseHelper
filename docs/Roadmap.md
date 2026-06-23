@@ -31,8 +31,10 @@ To build a reliable MVP, we will prioritize robust parsing, extensible configura
 * Add `--dry-run` support to the `release` command.
 * Allow users to preview the next version, aggregated changes, and affected version targets without making actual changes to the filesystem.
 
-### Step 6: GitHub Actions Integration
-* Create sample workflow files to automate the release process in CI/CD.
+### Step 6: GitHub & GitLab CI/CD Integration (Priority 1)
+* Create sample workflow files (`release.yml` for GitHub, `.gitlab-ci.yml` for GitLab) to automate the release process.
+* **Focus**: Enable a standard "Release on Merge" or "Release on Tag" pipeline that is easy to adopt for DevOps engineers.
+* Include documentation for "Dry-run first" validation in CI to ensure no release happens without proper fragment validation.
 
 ### Step 7: Pre-release Channels and Branch-based Versioning (Completed)
 * See detailed specification: [[Features/Prereleases|Pre-release Feature]]
@@ -101,3 +103,36 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
 * Implement `CHANGELOG.md` for ChangeSharp using ChangeSharp itself.
 * Successfully performed the first release (v1.0.0) using the tool.
 * Symbolically important for a tool promoting this practice.
+
+### Step 13: ChangeSharp Bot for Pull Requests (Priority 2)
+* **Goal**: Increase viral adoption and ensure fragment quality during the PR phase.
+* **Features**:
+    * Check if a PR/MR contains a new fragment file.
+    * Validate fragment format on-the-fly.
+    * Post a comment with the predicted version bump and a summary of changes.
+    * Support GitHub Apps and GitLab Webhooks.
+
+### Step 14: Polyglot Support & First-Class Handlers (Priority 3)
+* **Goal**: Move beyond "survivability" for non-.NET projects.
+* **Actions**:
+    * Implement native handlers for `pyproject.toml` (Python), `Cargo.toml` (Rust), and `pom.xml` (Java).
+    * Formalize the Regex handler documentation with clear, copy-pasteable examples for any language.
+    * Explore a simple plugin system for custom version targets.
+
+### Step 15: Enterprise Security & Approval Gates (Completed)
+* **Dry-run enforcement**: Implement a mandatory `--dry-run` or `--require-approval` flag for MCP `perform_release` tool.
+* Ensure AI agents cannot trigger a production release without an explicit human gate in the loop.
+
+### Step 16: Repository Intelligence for Agents (Priority 2)
+* **Goal**: Allow AI agents to understand what has changed in the codebase since the last release, even if fragments are missing.
+* **Features**:
+    * `query_changes`: A tool to compare the current state with the last tag/release and identify modified files/functions.
+    * **Fragment Gap Analysis**: Automatically suggest missing fragments based on uncommitted or unreleased code changes.
+    * Summarize "What's New" from both a technical (Git) and user (Changelog) perspective.
+
+### Step 17: Semantic API Validation (Safety Gate) (Priority 1)
+* **Goal**: Ensure the promised SemVer impact in fragments matches the reality of the code changes.
+* **Actions**:
+    * Integrate with API surface tracking tools (e.g., `PublicApiGenerator` for .NET, Swagger diff for APIs).
+    * **Cross-verification**: Fail the `validate` or `release` command if a fragment says `### Fixed` (Patch) but a public method signature was deleted (Major).
+    * Provide "Fix-it" suggestions: "You've made a breaking change, please move this fragment to 'Breaking Changes' or 'Removed'."

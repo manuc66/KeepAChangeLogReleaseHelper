@@ -11,6 +11,8 @@ The MCP server exposes the following tools:
 - `validate_fragments`: Ensure all pending fragments follow the correct format.
 - `perform_release`: Execute a release, aggregate changes into the changelog, and bump project versions.
 
+> **Security Warning**: In enterprise environments, AI agents should NOT be allowed to perform a release without human approval. It is highly recommended to use the `--dry-run` flag or implement a mandatory approval gate in your CI/CD pipeline before the final release is pushed.
+
 ## Configuration
 
 To use the ChangeSharp MCP server, you need to add it to your AI agent's configuration.
@@ -46,3 +48,11 @@ By integrating ChangeSharp with your AI agent:
 - You can ask the agent: "What's the status of our next release?"
 - The agent can help you prepare a release by summarizing the changes.
 - Validation is automated before any release is performed.
+
+## 🧠 Repository Intelligence (Upcoming)
+
+Future versions of the MCP server will include tools to help agents better understand the state of the repository:
+
+- `query_changes`: Summarizes technical changes (commits, file diffs) since the last release.
+- `suggest_fragments`: Analyzes code changes and suggests the appropriate category and message for a new fragment.
+- `audit_compliance`: Runs the Semantic Safety Gates to ensure the agent's proposed release notes match the actual code modifications.

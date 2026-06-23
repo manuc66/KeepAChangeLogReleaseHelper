@@ -30,3 +30,23 @@ You can override these default mappings or define entirely new categories in you
 ```
 
 Impact levels supported: `Major`, `Minor`, `Patch`, `None`.
+
+---
+
+## 🛡️ Automated Verification (Safety Gates)
+
+Human error is the main cause of SemVer violations (e.g., forgetting that a change is breaking). ChangeSharp aims to provide an automated **Safety Gate** to cross-verify fragments against actual code changes.
+
+### How it works
+During the `validate` or `release` process, ChangeSharp can be configured to run external tools that analyze the API surface:
+
+1.  **Extract Expected Impact**: ChangeSharp reads the pending fragments (e.g., `### Added` implies Minor).
+2.  **Analyze Real Impact**: An external analyzer (like `PublicApiGenerator` or a Swagger diff tool) compares the current code against the last released version.
+3.  **Cross-Check**:
+    *   If Real Impact > Expected Impact (e.g., Code says Major, Fragment says Patch) -> **FAIL** with a clear error.
+    *   If Real Impact < Expected Impact -> **WARN** (the user might be over-bumping intentionally).
+
+### Integration Examples
+*   **Web APIs**: Compare Swagger/OpenAPI schemas.
+*   **.NET Libraries**: Use `PublicApiGenerator` to detect signature changes.
+*   **CLI Tools**: Compare help output or command schemas.
