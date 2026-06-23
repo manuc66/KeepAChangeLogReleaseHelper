@@ -53,10 +53,13 @@ To build a reliable MVP, we will prioritize robust parsing, extensible configura
 * Enable mapping these custom categories to specific SemVer impacts (Major, Minor, or Patch).
 * See [[Features/CustomCategories|Custom Categories Specification]].
 
-### Step 11: AI Automation Layer (CLI + MCP)
+### Step 11: AI Automation Layer (CLI + MCP) (Completed)
 
 #### Goal
 Make ChangeSharp fully automation-ready for CI/CD systems and AI agents without adding complexity to the core system.
+* Implemented a lightweight MCP server in `ChangeSharp.Mcp`.
+* Exposes tools for status, fragment creation, validation, and release.
+* See [[McpIntegration|MCP Integration Documentation]].
 
 ---
 
@@ -94,6 +97,7 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
 
 ---
 
-### Step 12: Self-hosting & Dogfooding
+### Step 12: Self-hosting & Dogfooding (Completed)
 * Implement `CHANGELOG.md` for ChangeSharp using ChangeSharp itself.
+* Successfully performed the first release (v1.0.0) using the tool.
 * Symbolically important for a tool promoting this practice.

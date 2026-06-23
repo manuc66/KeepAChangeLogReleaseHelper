@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChangeSharp.Cli", "ChangeSharp.Cli\ChangeSharp.Cli.csproj", "{677D1C03-7FC0-4216-B7F0-D013668911CE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChangeSharp.Mcp", "ChangeSharp.Mcp\ChangeSharp.Mcp.csproj", "{61069AB3-1232-4199-ABEB-F5269B3AD9BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,6 +60,18 @@ Global
 		{677D1C03-7FC0-4216-B7F0-D013668911CE}.Release|x64.Build.0 = Release|Any CPU
 		{677D1C03-7FC0-4216-B7F0-D013668911CE}.Release|x86.ActiveCfg = Release|Any CPU
 		{677D1C03-7FC0-4216-B7F0-D013668911CE}.Release|x86.Build.0 = Release|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Debug|x64.Build.0 = Debug|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Debug|x86.Build.0 = Debug|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Release|x64.ActiveCfg = Release|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Release|x64.Build.0 = Release|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Release|x86.ActiveCfg = Release|Any CPU
+		{61069AB3-1232-4199-ABEB-F5269B3AD9BA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,52 @@
+﻿{
+  "ChangelogPath": "CHANGELOG.md",
+  "UnreleasedDir": ".changesharp/unreleased",
+  "ReleasingDir": ".changesharp/releasing",
+  "PrereleasesDir": ".changesharp/prereleases",
+  "VersionTargets": [
+    {
+      "Path": "ChangeSharp.Cli/ChangeSharp.Cli.csproj",
+      "Type": "msbuild",
+      "Regex": null,
+      "JsonPath": null
+    },
+    {
+      "Path": "ChangeSharp.Mcp/ChangeSharp.Mcp.csproj",
+      "Type": "msbuild",
+      "Regex": null,
+      "JsonPath": null
+    },
+    {
+      "Path": "ChangeSharp.Tests/ChangeSharp.Tests.csproj",
+      "Type": "msbuild",
+      "Regex": null,
+      "JsonPath": null
+    },
+    {
+      "Path": "ChangeSharp/ChangeSharp.csproj",
+      "Type": "msbuild",
+      "Regex": null,
+      "JsonPath": null
+    }
+  ],
+  "PreRelease": {
+    "Enabled": true,
+    "BranchAsIdentifier": true,
+    "SanitizeBranchName": true,
+    "MaxIdentifierLength": 30
+  },
+  "SemverPolicy": {
+    "Mappings": {
+      "Breaking Changes": "Major",
+      "Removed": "Major",
+      "Changed": "Major",
+      "Added": "Minor",
+      "Deprecated": "Minor",
+      "Fixed": "Patch",
+      "Security": "Patch"
+    }
+  },
+  "FragmentNaming": {
+    "IncludeBranchName": true
+  }
+}
