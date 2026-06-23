@@ -1,4 +1,4 @@
-namespace KeepAChangeLogReleaseHelper;
+namespace ChangeSharp;
 
 public class ChangeSetMerger
 {

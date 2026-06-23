@@ -1,4 +1,4 @@
-namespace KeepAChangeLogReleaseHelper;
+namespace ChangeSharp;
 
 public class NextVersionComputer
 {
@@ -15,11 +15,11 @@ public class NextVersionComputer
         Version version = new(currentVersion);
 
         // Determine the next version based on the changes
-        if (changeSet.Changed.Count > 0 || changeSet.Removed.Count > 0)
+        if (changeSet.Breaking.Count > 0 || changeSet.Removed.Count > 0)
         {
             version = new Version(version.Major + 1, 0, 0);
         }
-        else if (changeSet.Added.Count > 0 || changeSet.Deprecated.Count > 0)
+        else if (changeSet.Changed.Count > 0 || changeSet.Added.Count > 0 || changeSet.Deprecated.Count > 0)
         {
             version = new Version(version.Major, version.Minor + 1, 0);
         }

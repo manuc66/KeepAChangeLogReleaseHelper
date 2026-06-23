@@ -1,4 +1,4 @@
-namespace KeepAChangeLogReleaseHelper.Tests;
+namespace ChangeSharp.Tests;
 
 public class ChangeSetMergerTests
 {

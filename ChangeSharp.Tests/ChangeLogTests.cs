@@ -1,4 +1,4 @@
-namespace KeepAChangeLogReleaseHelper.Tests;
+namespace ChangeSharp.Tests;
 
 public class ChangeLogTests
 {
@@ -255,7 +255,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Good examples and basic guidelines, including proper date formatting.
 - Counter-examples: ""What makes unicorns cry?"".
 ").Release(new DateTime(2023, 7, 9, 12, 5, 2, 3, 11),@"
-        ## Changed
+        ## Breaking Changes
         - Improved existing feature 1.
 
         ",
@@ -279,7 +279,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2023-07-09
 
-### Changed
+### Breaking Changes
 - Improved existing feature 1.
 
 ### Added

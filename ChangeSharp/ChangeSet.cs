@@ -1,9 +1,10 @@
 using System.Text;
 
-namespace KeepAChangeLogReleaseHelper;
+namespace ChangeSharp;
 
 public class ChangeSet
 {
+    public List<string> Breaking { get; init; } = new();
     public List<string> Changed { get; init; } = new();
     public List<string> Removed { get; init; } = new();
     public List<string> Added { get; init; } = new();
@@ -15,6 +16,7 @@ public class ChangeSet
     {
         return new ChangeSet
         {
+            Breaking = Breaking.Union(other.Breaking).ToList(),
             Changed = Changed.Union(other.Changed).ToList(),
             Removed = Removed.Union(other.Removed).ToList(),
             Added = Added.Union(other.Added).ToList(),
@@ -29,6 +31,7 @@ public class ChangeSet
         StringBuilder sb = new();
 
         string level = "##";
+        AddSection(sb, "Breaking Changes", Breaking, level);
         AddSection(sb, nameof(Changed), Changed, level);
         AddSection(sb, nameof(Removed), Removed, level);
         AddSection(sb, nameof(Added), Added, level);
@@ -44,6 +47,7 @@ public class ChangeSet
         StringBuilder sb = new();
 
         string level = "###";
+        AddSection(sb, "Breaking Changes", Breaking, level);
         AddSection(sb, nameof(Changed), Changed, level);
         AddSection(sb, nameof(Removed), Removed, level);
         AddSection(sb, nameof(Added), Added, level);

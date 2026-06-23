@@ -1,4 +1,4 @@
-namespace KeepAChangeLogReleaseHelper.Tests;
+namespace ChangeSharp.Tests;
 
 public class GetNextSemanticVersionTests
 {
@@ -8,10 +8,24 @@ public class GetNextSemanticVersionTests
     }
 
     [Test]
-    public void ItComputeAMajorFromChanged()
+    public void ItComputeAMinorFromChanged()
     {
         string changeset = @"
         ## Changed
+        - Improved existing feature 1.
+
+        ";
+
+        string nextVersion = NextVersionComputer.GetNextSemanticVersion(changeset, "1.0.0");
+
+        Assert.That(nextVersion, Is.EqualTo("1.1.0"));
+    }
+
+    [Test]
+    public void ItComputeAMajorFromBreakingChanges()
+    {
+        string changeset = @"
+        ## Breaking Changes
         - Improved existing feature 1.
 
         ";

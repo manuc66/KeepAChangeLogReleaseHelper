@@ -1,4 +1,4 @@
-namespace KeepAChangeLogReleaseHelper;
+namespace ChangeSharp;
 
 public class ChangeLog
 {
@@ -86,8 +86,7 @@ public class ChangeLog
         }
         else
         {
-            afterUnreleased = lines.Skip(beforeUnreleased.Count)
-                .SkipWhile(x => !x.StartsWith("## ")).ToList(); 
+            afterUnreleased = lines.Skip(beforeUnreleased.Count).ToList(); 
         }
         
         string? lastReleaseLine = afterUnreleased.Count > 1 ? afterUnreleased[0] : null;
