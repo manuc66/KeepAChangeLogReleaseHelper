@@ -479,3 +479,4 @@ $RECYCLE.BIN/
 # Obsidian
 .obsidian/
 /.junie/
+.idea/
