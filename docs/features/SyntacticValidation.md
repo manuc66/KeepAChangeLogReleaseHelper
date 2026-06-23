@@ -1,6 +1,9 @@
-# Semantic Validation Safety Gate
+# Syntactic Validation Safety Gate
 
-ChangeSharp ensures that your release notes and your code remain in sync. The **Semantic Validation Safety Gate** is a feature designed to prevent "version drift" by cross-verifying the SemVer impact declared in fragments against the actual changes in the codebase.
+ChangeSharp ensures that your release notes and your code remain in sync. The **Syntactic Validation Safety Gate** is a feature designed to prevent "version drift" by cross-verifying the SemVer impact declared in fragments against the actual changes in the codebase.
+
+> [!IMPORTANT]
+> **Syntactic vs. Semantic**: This gate focuses on **syntactic** compatibility (API signatures, missing methods, type changes). It cannot detect **behavioral (semantic)** changes. For example, replacing `List.fold` with `List.foldBack` while maintaining the same signature will pass this gate but may break consumers. This tool provides a safety net for public API surfaces, not a guarantee of behavioral identity.
 
 ## The Problem
 
@@ -37,7 +40,7 @@ In `changesharp.json`, you can define your validation command:
 ```json
 {
   "Validation": {
-    "SemanticGate": {
+    "SyntacticGate": {
       "Enabled": true,
       "Tool": "dotnet-api-diff",
       "Arguments": "--base-tag last-release --current-dir .",
@@ -49,7 +52,7 @@ In `changesharp.json`, you can define your validation command:
 
 ## Reliability & Environment Control
 
-In enterprise CI runners, external tools might not always be available or properly configured. ChangeSharp follows a strict reliability contract for the Semantic Gate:
+In enterprise CI runners, external tools might not always be available or properly configured. ChangeSharp follows a strict reliability contract for the Syntactic Gate:
 
 ### ⚙️ Behavior on Tool Failure
 
@@ -62,7 +65,7 @@ You can configure how ChangeSharp reacts if an external analyzer fails or is mis
 ### 🔍 Tool Availability Check
 
 ChangeSharp performs a "Pre-flight Check" before running the gate. If `Tool` is not found in the `PATH`, it will fail immediately with a descriptive error:
-`Error: Semantic Validation tool 'openapi-diff' not found in PATH. Ensure it is installed in your CI runner.`
+`Error: Syntactic Validation tool 'openapi-diff' not found in PATH. Ensure it is installed in your CI runner.`
 
 ## Continuous Integration
 

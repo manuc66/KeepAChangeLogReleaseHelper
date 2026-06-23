@@ -106,9 +106,9 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
 
 ### Step 13: ChangeSharp Bot for Pull Requests (Priority 2)
 * **Goal**: Ensure fragment quality and provide visibility into release impact during the PR phase.
-* **Phase 1: CI-Native Bot (GitHub Actions/GitLab CI)**:
-    * Implement a lightweight script/action that runs `changesharp validate`.
-    * Post PR comments using standard CI tokens.
+* **Phase 1: CI-Native Bot (GitHub Actions/GitLab CI) (Completed)**:
+    * Implemented a lightweight script/action that runs `changesharp validate`.
+    * Post PR comments using standard CI tokens. See `samples/ci/github-bot.yml`.
     * No external infrastructure required.
 * **Phase 2: Full ChangeSharp App (Marketplace)**:
     * Build a dedicated GitHub App / GitLab Webhook service.
@@ -135,16 +135,18 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
     * **Fragment Gap Analysis**: Automatically suggest missing fragments based on uncommitted or unreleased code changes.
     * Summarize "What's New" from both a technical (Git) and user (Changelog) perspective.
 
-### Step 17: Semantic API Validation (Safety Gate) (Priority 1)
+### Step 17: Syntactic API Validation (Safety Gate) (Priority 1)
 * **Goal**: Ensure the promised SemVer impact in fragments matches the reality of the code changes.
 * **Actions**:
     * Integrate with API surface tracking tools (e.g., `PublicApiGenerator` for .NET, Swagger diff for APIs).
     * **Cross-verification**: Fail the `validate` or `release` command if a fragment says `### Fixed` (Patch) but a public method signature was deleted (Major).
     * Provide "Fix-it" suggestions: "You've made a breaking change, please move this fragment to 'Breaking Changes' or 'Removed'."
-* See [[Features/SemanticValidation|Semantic Validation Safety Gate]].
+    * **Note**: This is a **syntactic** gate. It detects signature changes but cannot guarantee **semantic** behavior (e.g., a logic change in a method body that keeps the same signature).
+* See [[Features/SyntacticValidation|Syntactic Validation Safety Gate]].
 
 ### Step 18: Multi-Team Monorepo Scoping (Priority 2)
 * **Goal**: Support large-scale enterprise monorepos with independent team policies.
+* **Position**: ChangeSharp aims to support enterprise monorepos. To avoid friction between teams, we will implement a scoped model where `changesharp.json` can exist in sub-directories, defining independent versioning policies and changelogs for that specific scope.
 * **Actions**:
     * **Config Hierarchies**: Allow `changesharp.json` to be placed in subdirectories, overriding global settings for that scope.
     * **Scoped Fragments**: Support `.changesharp/` directories per service/sub-project.

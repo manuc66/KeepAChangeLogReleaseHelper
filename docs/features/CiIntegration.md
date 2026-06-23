@@ -15,7 +15,30 @@ ChangeSharp is designed to facilitate a "Release on Merge" or "Release on Tag" w
     -   **Exit Code 3**: Validation Error (Missing fragment or invalid format).
 -   **CI Action**: Post a ❌ on the PR if exit code is non-zero. Use the predicted version bump in the comment.
 
-### 2. Post-Merge / Release Phase
+### 2. Pull Request Bot (Step 13)
+To drive adoption and ensure fragment quality, we recommend using the **ChangeSharp Bot** logic in your CI. 
+
+A "Phase 1" bot is a simple script that:
+1. Runs `changesharp validate --require-fragments`.
+2. If it fails, posts a helpful comment on the Pull Request.
+
+Example for GitHub Actions:
+```yaml
+      - name: Post PR Comment
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "### ⚠️ Missing Change Fragments\n\nThis PR needs fragments. Run `changesharp new`."
+            })
+```
+See `samples/ci/github-bot.yml` for a full implementation.
+
+### 3. Post-Merge / Release Phase
 **Goal**: Finalize the release, update the changelog, and bump versions.
 
 -   **Workflow**:
@@ -80,5 +103,5 @@ jobs:
 
 ## ⚠️ Reliability & Error Handling
 
--   **Missing External Tools**: If a configured tool (e.g., for Semantic Validation) is missing, ChangeSharp will **Exit Code 1** by default. This can be configured to **Warn** in `changesharp.json` to avoid breaking pipelines during environment migration.
+-   **Missing External Tools**: If a configured tool (e.g., for Syntactic Validation) is missing, ChangeSharp will **Exit Code 1** by default. This can be configured to **Warn** in `changesharp.json` to avoid breaking pipelines during environment migration.
 -   **Idempotence**: Running `release` twice on the same state will result in **Exit Code 2** (No changes to release), which is safe and should not fail the pipeline.
