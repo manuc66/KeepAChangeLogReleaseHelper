@@ -13,7 +13,10 @@ public class NextVersionComputer
 
     public static string ComputeVersion(string currentVersion, ChangeSet changeSet, SemverPolicyConfig? policy = null)
     {
-        return ComputeVersionWithWarning(currentVersion, changeSet, policy).Version;
+        var (version, warning) = ComputeVersionWithWarning(currentVersion, changeSet, policy);
+        if (warning != null)
+            throw new InvalidOperationException(warning);
+        return version;
     }
 
     public static (string Version, string? Warning) ComputeVersionWithWarning(string currentVersion, ChangeSet changeSet, SemverPolicyConfig? policy = null)
@@ -102,7 +105,7 @@ public class NextVersionComputer
 
         if (!SemVersion.TryParse(versionString, SemVersionStyles.Strict, out var version))
         {
-            version = new SemVersion(0);
+            throw new InvalidOperationException($"Current version '{currentVersion}' is not a valid SemVer version.");
         }
 
         // 1. If current version is already a pre-release, we might be continuing it

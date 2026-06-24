@@ -297,9 +297,6 @@ class Program
                     return o.Err("No unreleased fragments found. Nothing to release.", ExitCodeNoChanges);
                 }
 
-                int? apiResult = CheckApiMinLevel(parseResult, manager, apiMinLevelOption, apiMinLevelWarnOption, o);
-                if (apiResult.HasValue) return apiResult.Value;
-
                 var targets = manager.GetEffectiveVersionTargets().ToList();
 
                 if (dryRun)
@@ -335,14 +332,15 @@ class Program
                         Console.WriteLine("[Dry Run] No files were actually modified.");
                     });
                 }
-                else
-                {
-                    var (nextVersion, releaseWarnings) = manager.Release(DateTime.Today, dryRun);
-                    foreach (var w in releaseWarnings)
-                        Console.Error.WriteLine($"Warning: {w}");
-                    return o.Ok(new { releasedVersion = nextVersion, warnings = releaseWarnings },
-                        () => Console.WriteLine($"Release successful! New version: {nextVersion}"));
-                }
+
+                int? apiResult = CheckApiMinLevel(parseResult, manager, apiMinLevelOption, apiMinLevelWarnOption, o);
+                if (apiResult.HasValue) return apiResult.Value;
+
+                var (nextVersion, releaseWarnings) = manager.Release(DateTime.Today, dryRun);
+                foreach (var w in releaseWarnings)
+                    Console.Error.WriteLine($"Warning: {w}");
+                return o.Ok(new { releasedVersion = nextVersion, warnings = releaseWarnings },
+                    () => Console.WriteLine($"Release successful! New version: {nextVersion}"));
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("Conflict"))
             {

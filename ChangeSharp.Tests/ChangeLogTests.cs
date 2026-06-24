@@ -224,6 +224,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
     [Test]
+    public void Release_ReaddsUnreleasedSection()
+    {
+        var result = new ChangeLog(@"# Changelog
+
+## [Unreleased]
+
+### Added
+- Feature
+
+## [0.1.0] - 2024-01-01
+
+### Added
+- Initial
+").ReleaseWithVersion(new DateTime(2024, 6, 1), null, "### Added\n- New feature");
+
+        Assert.That(result.ToString(), Does.Contain("## [Unreleased]"));
+        Assert.That(result.ToString(), Does.Contain("## [0.2.0] - 2024-06-01"));
+
+        // [Unreleased] should appear BEFORE the new version
+        int unreleasedIdx = result.ToString().IndexOf("## [Unreleased]");
+        int versionIdx = result.ToString().IndexOf("## [0.2.0]");
+        Assert.That(unreleasedIdx, Is.LessThan(versionIdx));
+    }
+
+    [Test]
     public void ItCanProduceARelease()
     {
         ChangeLog changeLog = new ChangeLog(@"# Changelog
@@ -276,6 +301,8 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
 
 ## [1.0.0] - 2023-07-09
 

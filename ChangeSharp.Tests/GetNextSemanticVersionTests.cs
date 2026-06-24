@@ -79,6 +79,30 @@ public class GetNextSemanticVersionTests
     }
 
     [Test]
+    public void ComputeVersion_InvalidCurrentVersion_Throws()
+    {
+        var changeSet = new ChangeSet();
+        changeSet.Added.Add("Feature");
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            NextVersionComputer.ComputeVersion("not-a-version", changeSet));
+        Assert.That(ex.Message, Does.Contain("not-a-version"));
+    }
+
+    [Test]
+    public void ComputeVersionWithWarning_InvalidVersion_ReturnsWarning()
+    {
+        var changeSet = new ChangeSet();
+        changeSet.Added.Add("Feature");
+
+        var (version, warning) = NextVersionComputer.ComputeVersionWithWarning("not-a-version", changeSet);
+
+        Assert.That(version, Is.EqualTo("0.1.0"));
+        Assert.That(warning, Is.Not.Null);
+        Assert.That(warning, Does.Contain("not a valid SemVer"));
+    }
+
+    [Test]
     public void ItComputeAPatchFromOnlyFixes()
     {
         string changeset = @"

@@ -94,6 +94,8 @@ public class ChangeLog
         string newContent = string.Join(Environment.NewLine,
             beforeUnreleased.Concat(new[]
             {
+                "## [Unreleased]",
+                "",
                 $"## [{newVersion}] - {dateTime:yyyy-MM-dd}{Environment.NewLine}", unreleasedChanges.ToChangelogString()
             }).Concat(afterUnreleased)
         );
