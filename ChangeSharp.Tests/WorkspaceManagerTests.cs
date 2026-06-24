@@ -31,7 +31,7 @@ public class WorkspaceManagerTests
         manager.Initialize();
         manager.CreateFragment("Added a feature", "Added");
 
-        string nextVersion = manager.Release(DateTime.Today);
+        var (nextVersion, _) = manager.Release(DateTime.Today);
 
         Assert.That(nextVersion, Is.EqualTo("0.1.0"));
         Assert.That(File.Exists(Path.Combine(_testDir, "CHANGELOG.md")), Is.True);
@@ -59,7 +59,7 @@ public class WorkspaceManagerTests
         File.Move(fragmentPath, Path.Combine(releasingDir, filename));
 
         // Act
-        string nextVersion = manager.Release(DateTime.Today);
+        var (nextVersion, _) = manager.Release(DateTime.Today);
 
         // Assert
         Assert.That(nextVersion, Is.EqualTo("0.1.0"));
@@ -92,7 +92,7 @@ public class WorkspaceManagerTests
         File.WriteAllText(changelogPath, updated.ToString());
 
         // Act
-        string nextVersion = manager.Release(releaseDate);
+        var (nextVersion, _) = manager.Release(releaseDate);
 
         // Assert
         Assert.That(nextVersion, Is.EqualTo("0.1.0"));
@@ -126,7 +126,7 @@ public class WorkspaceManagerTests
         manager.Initialize();
         manager.CreateFragment("Changed a feature", "Changed");
 
-        string nextVersion = manager.Release(DateTime.Today);
+        var (nextVersion, _) = manager.Release(DateTime.Today);
 
         Assert.That(nextVersion, Is.EqualTo("0.1.0"));
     }
@@ -146,7 +146,7 @@ public class WorkspaceManagerTests
         
         manager.CreateFragment("Changed a feature", "Changed");
 
-        string nextVersion = manager.Release(DateTime.Today);
+        var (nextVersion, _) = manager.Release(DateTime.Today);
 
         Assert.That(nextVersion, Is.EqualTo("1.0.0"));
     }
@@ -235,7 +235,7 @@ public class WorkspaceManagerTests
         
         manager.CreateFragment("Refactored some code", "Maintenance");
 
-        string nextVersion = manager.Release(DateTime.Today);
+        var (nextVersion, _) = manager.Release(DateTime.Today);
 
         Assert.That(nextVersion, Is.EqualTo("0.0.1"));
         Assert.That(File.ReadAllText(Path.Combine(_testDir, "CHANGELOG.md")), Contains.Substring("### Maintenance"));
@@ -302,8 +302,8 @@ public class WorkspaceManagerTests
         string filename = Path.GetFileName(path);
         
         // Should not have branch name if disabled (format: timestamp-slug.md)
-        // Timestamp is 14 digits
-        Assert.That(filename.Length, Is.EqualTo(14 + 1 + "test-message".Length + 3));
+        // Timestamp is 17 digits (yyyyMMddHHmmssfff)
+        Assert.That(filename, Does.Match(@"^\d{17}-test-message\.md$"));
         Assert.That(filename, Does.EndWith("-test-message.md"));
     }
 

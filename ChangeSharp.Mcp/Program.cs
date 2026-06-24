@@ -210,7 +210,10 @@ class Program
 
                     try
                     {
-                        string version = Manager.Release(DateTime.UtcNow, dryRun);
+                        var (version, releaseWarnings) = Manager.Release(DateTime.UtcNow, dryRun);
+                        string warningText = releaseWarnings.Length > 0
+                            ? "\nWarnings:\n" + string.Join("\n", releaseWarnings.Select(w => $"  - {w}"))
+                            : "";
                         return new
                         {
                             content = new[]
@@ -218,7 +221,7 @@ class Program
                                 new
                                 {
                                     type = "text",
-                                    text = dryRun ? $"Dry-run: Would release version {version}." : $"Released version {version}."
+                                    text = (dryRun ? $"Dry-run: Would release version {version}." : $"Released version {version}.") + warningText
                                 }
                             }
                         };

@@ -13,6 +13,11 @@ public class NextVersionComputer
 
     public static string ComputeVersion(string currentVersion, ChangeSet changeSet, SemverPolicyConfig? policy = null)
     {
+        return ComputeVersionWithWarning(currentVersion, changeSet, policy).Version;
+    }
+
+    public static (string Version, string? Warning) ComputeVersionWithWarning(string currentVersion, ChangeSet changeSet, SemverPolicyConfig? policy = null)
+    {
         policy ??= new SemverPolicyConfig();
         
         string prefix = "";
@@ -23,16 +28,16 @@ public class NextVersionComputer
             versionString = currentVersion.Substring(1);
         }
 
+        string? warning = null;
         if (!SemVersion.TryParse(versionString, SemVersionStyles.Strict, out var version))
         {
-            // Fallback for non-semver strings if possible, or just use 0.0.0
+            warning = $"Current version '{currentVersion}' is not a valid SemVer version. Falling back to 0.0.0.";
             version = new SemVersion(0);
         }
 
         SemVersion nextVersion;
 
-        // Determine the impact for each section
-        int maxImpact = 0; // 0=None, 1=Patch, 2=Minor, 3=Major
+        int maxImpact = 0;
         
         foreach (var pair in changeSet.Sections)
         {
@@ -45,21 +50,21 @@ public class NextVersionComputer
             }
         }
 
-        if (maxImpact == 3) // Major
+        if (maxImpact == 3)
         {
             if (version.IsPrerelease && version.Minor == 0 && version.Patch == 0)
                 nextVersion = new SemVersion(version.Major, 0, 0);
             else
                 nextVersion = new SemVersion(version.Major + 1, 0, 0);
         }
-        else if (maxImpact == 2) // Minor
+        else if (maxImpact == 2)
         {
             if (version.IsPrerelease && version.Patch == 0)
                 nextVersion = new SemVersion(version.Major, version.Minor, 0);
             else
                 nextVersion = new SemVersion(version.Major, version.Minor + 1, 0);
         }
-        else if (maxImpact == 1) // Patch
+        else if (maxImpact == 1)
         {
             if (version.IsPrerelease)
                 nextVersion = new SemVersion(version.Major, version.Minor, version.Patch);
@@ -71,7 +76,7 @@ public class NextVersionComputer
             nextVersion = version;
         }
 
-        return $"{prefix}{nextVersion}";
+        return ($"{prefix}{nextVersion}", warning);
     }
 
     public static int ParseImpact(string impact)

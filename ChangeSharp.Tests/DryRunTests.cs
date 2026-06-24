@@ -42,7 +42,7 @@ public class DryRunTests
         Assert.That(originalFragments.Length, Is.EqualTo(1));
 
         // 2. Perform Dry Run Release
-        string nextVersion = manager.Release(DateTime.Today, dryRun: true);
+        var (nextVersion, _) = manager.Release(DateTime.Today, dryRun: true);
         
         // 3. Verify files are NOT changed
         Assert.That(nextVersion, Is.EqualTo("0.1.0"));

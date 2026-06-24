@@ -3,5 +3,8 @@ namespace ChangeSharp.VersionPropagation;
 public interface IVersionPropagationHandler
 {
     bool CanHandle(VersionTargetConfig target);
-    void UpdateVersion(string basePath, VersionTargetConfig target, string nextVersion);
+    /// <summary>
+    /// Returns null on success, or a warning message if the target was skipped.
+    /// </summary>
+    string? UpdateVersion(string basePath, VersionTargetConfig target, string nextVersion);
 }

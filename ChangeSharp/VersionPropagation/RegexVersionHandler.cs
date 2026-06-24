@@ -10,21 +10,18 @@ public class RegexVersionHandler : IVersionPropagationHandler
                !string.IsNullOrEmpty(target.Regex);
     }
 
-    public void UpdateVersion(string basePath, VersionTargetConfig target, string nextVersion)
+    public string? UpdateVersion(string basePath, VersionTargetConfig target, string nextVersion)
     {
         string fullPath = Path.Combine(basePath, target.Path);
-        if (!File.Exists(fullPath)) return;
+        if (!File.Exists(fullPath))
+            return $"Regex version target not found: {target.Path}";
 
-        if (string.IsNullOrEmpty(target.Regex)) return;
+        if (string.IsNullOrEmpty(target.Regex))
+            return $"Regex target '{target.Path}' has no regex pattern configured.";
 
         string content = File.ReadAllText(fullPath);
-        
-        // Use Regex.Replace. 
-        // If the user wants to replace only a part of the match, they should use lookbehind/lookahead
-        // or we could support a replacement pattern if we wanted to be more complex.
-        // For now, let's keep it simple: it replaces the whole match.
-        
         string updated = Regex.Replace(content, target.Regex, nextVersion);
         File.WriteAllText(fullPath, updated);
+        return null;
     }
 }

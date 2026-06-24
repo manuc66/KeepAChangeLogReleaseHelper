@@ -337,8 +337,10 @@ class Program
                 }
                 else
                 {
-                    string nextVersion = manager.Release(DateTime.Today, dryRun);
-                    return o.Ok(new { releasedVersion = nextVersion },
+                    var (nextVersion, releaseWarnings) = manager.Release(DateTime.Today, dryRun);
+                    foreach (var w in releaseWarnings)
+                        Console.Error.WriteLine($"Warning: {w}");
+                    return o.Ok(new { releasedVersion = nextVersion, warnings = releaseWarnings },
                         () => Console.WriteLine($"Release successful! New version: {nextVersion}"));
                 }
             }

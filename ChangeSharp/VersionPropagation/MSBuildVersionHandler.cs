@@ -13,10 +13,11 @@ public class MSBuildVersionHandler : IVersionPropagationHandler
         return ext == ".csproj" || ext == ".props" || ext == ".targets";
     }
 
-    public void UpdateVersion(string basePath, VersionTargetConfig target, string nextVersion)
+    public string? UpdateVersion(string basePath, VersionTargetConfig target, string nextVersion)
     {
         string fullPath = Path.Combine(basePath, target.Path);
-        if (!File.Exists(fullPath)) return;
+        if (!File.Exists(fullPath))
+            return $"MSBuild version target not found: {target.Path}";
 
         XDocument doc;
         using (var stream = File.OpenRead(fullPath))
@@ -45,15 +46,14 @@ public class MSBuildVersionHandler : IVersionPropagationHandler
         }
         else if (versionElements.Any())
         {
-            // Prefer <Version> — it takes precedence and avoids breaking MinVer-style VersionPrefix flows
             foreach (var el in versionElements) el.Value = nextVersion;
         }
         else
         {
-            // Fallback to <VersionPrefix> if only that exists
             foreach (var el in versionPrefixElements) el.Value = nextVersion;
         }
 
         doc.Save(fullPath);
+        return null;
     }
 }

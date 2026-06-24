@@ -14,20 +14,22 @@ public class JsonVersionHandler : IVersionPropagationHandler
         return ext == ".json";
     }
 
-    public void UpdateVersion(string basePath, VersionTargetConfig target, string nextVersion)
+    public string? UpdateVersion(string basePath, VersionTargetConfig target, string nextVersion)
     {
         string fullPath = Path.Combine(basePath, target.Path);
-        if (!File.Exists(fullPath)) return;
+        if (!File.Exists(fullPath))
+            return $"JSON version target not found: {target.Path}";
 
         string json = File.ReadAllText(fullPath);
         var node = JsonNode.Parse(json);
-        if (node == null) return;
+        if (node == null) return $"Failed to parse JSON: {target.Path}";
 
         string path = target.JsonPath ?? "version";
         SetNodeByPath(node, path, nextVersion);
 
         var options = new JsonSerializerOptions { WriteIndented = true };
         File.WriteAllText(fullPath, node.ToJsonString(options));
+        return null;
     }
 
     private static void SetNodeByPath(JsonNode root, string path, string value)

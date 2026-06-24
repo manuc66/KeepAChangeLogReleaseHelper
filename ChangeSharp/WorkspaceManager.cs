@@ -290,7 +290,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
         // Clean/slugify message for filename
         string slug = Slugify(message);
-        string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff");
         
         string filename;
         if (config.FragmentNaming.IncludeBranchName)
@@ -381,19 +381,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         nextVersion = NextVersionComputer.ComputeVersion(currentVersion, mergedChangeSet, config.SemverPolicy);
     }
 
-    public string Release(DateTime releaseDate, bool dryRun = false, string? forcedVersion = null)
+    public (string Version, string[] Warnings) Release(DateTime releaseDate, bool dryRun = false, string? forcedVersion = null)
     {
         var config = LoadConfig();
         string unreleasedPath = Path.Combine(_basePath, config.UnreleasedDir);
         string releasingPath = Path.Combine(_basePath, config.ReleasingDir);
         string changelogPath = Path.Combine(_basePath, config.ChangelogPath);
+        var warnings = new List<string>();
 
         if (dryRun)
         {
             GetStatus(out int count, out ChangeSet merged, out string current, out string next);
             if (forcedVersion != null) next = forcedVersion;
             if (count == 0) throw new InvalidOperationException("No unreleased fragments found to release.");
-            return next;
+            return (next, []);
         }
 
         // 1. Transactional check & move
@@ -444,17 +445,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         if (currentVersion != "0.0.0" && currentContent != null && currentContent == mergedChangeSet.ToChangelogString().Trim())
         {
             nextVersion = currentVersion;
-            // Already updated in a previous interrupted run, skip update
         }
         else
         {
-            nextVersion = forcedVersion ?? NextVersionComputer.ComputeVersion(currentVersion, mergedChangeSet, config.SemverPolicy);
+            var (computedVersion, versionWarning) = NextVersionComputer.ComputeVersionWithWarning(currentVersion, mergedChangeSet, config.SemverPolicy);
+            nextVersion = forcedVersion ?? computedVersion;
             
+            if (versionWarning != null)
+                warnings.Add(versionWarning);
+
             string? existingContent = changeLog.GetVersionContent(nextVersion);
             if (existingContent != null && existingContent == mergedChangeSet.ToChangelogString().Trim())
             {
-                // This covers the case where nextVersion was already created but is not currentVersion 
-                // (shouldn't happen with standard logic but good for robustness)
             }
             else if (existingContent != null)
             {
@@ -474,9 +476,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         }
 
         // 5. Propagate version to targets
-        PropagateVersion(config, nextVersion);
+        warnings.AddRange(PropagateVersion(config, nextVersion));
 
-        return nextVersion;
+        return (nextVersion, warnings.ToArray());
     }
 
     private string GetCurrentVersion(ChangeSharpConfig config)
@@ -519,8 +521,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         }
     }
 
-    private void PropagateVersion(ChangeSharpConfig config, string nextVersion)
+    private string[] PropagateVersion(ChangeSharpConfig config, string nextVersion)
     {
+        var warnings = new List<string>();
         var handlers = GetHandlers();
 
         foreach (var target in config.VersionTargets)
@@ -528,9 +531,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             var handler = handlers.FirstOrDefault(h => h.CanHandle(target));
             if (handler != null)
             {
-                handler.UpdateVersion(_basePath, target, nextVersion);
+                string? warning = handler.UpdateVersion(_basePath, target, nextVersion);
+                if (warning != null) warnings.Add(warning);
+            }
+            else
+            {
+                warnings.Add($"No handler found for version target: {target.Path} (type: {target.Type})");
             }
         }
+
+        return warnings.ToArray();
     }
 
     private static List<IVersionPropagationHandler> GetHandlers()
@@ -698,7 +708,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         // For now, assume info.BaseVersion IS what ComputeVersion would give.
         // The spec says "without recalculating", so we should probably use info.BaseVersion.
         
-        string resultVersion = Release(DateTime.Today, dryRun, info.BaseVersion);
+        var (resultVersion, _) = Release(DateTime.Today, dryRun, info.BaseVersion);
         
         // Clean up prerelease info
         string branchSlug = SanitizeBranchName(info.Branch);
@@ -724,14 +734,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             return new ChangeSharpConfig();
         }
 
+        string json;
         try
         {
-            string json = File.ReadAllText(ConfigFilePath, Encoding.UTF8);
-            return JsonSerializer.Deserialize<ChangeSharpConfig>(json) ?? new ChangeSharpConfig();
+            json = File.ReadAllText(ConfigFilePath, Encoding.UTF8);
         }
-        catch
+        catch (Exception ex)
         {
-            return new ChangeSharpConfig();
+            throw new InvalidOperationException($"Failed to read config file '{ConfigFilePath}': {ex.Message}", ex);
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<ChangeSharpConfig>(json)
+                ?? throw new InvalidOperationException($"Config file '{ConfigFilePath}' is empty or could not be deserialized.");
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException($"Config file '{ConfigFilePath}' contains invalid JSON: {ex.Message}", ex);
         }
     }
 
