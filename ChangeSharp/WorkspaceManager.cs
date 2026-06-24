@@ -405,12 +405,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
         // 1. Transactional check & move
         string[] fragments;
-        bool resumed = false;
         
         if (Directory.Exists(releasingPath) && Directory.GetFiles(releasingPath, "*.md").Length > 0)
         {
             fragments = Directory.GetFiles(releasingPath, "*.md");
-            resumed = true;
         }
         else
         {
@@ -606,7 +604,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                     }
                 }
             }
-            catch { /* Ignore corrupt info */ }
+            catch (JsonException ex)
+            {
+                Console.Error.WriteLine($"Warning: Corrupt prerelease info.json ({infoPath}), resetting counter: {ex.Message}");
+            }
         }
 
         string nextPrerelease = NextVersionComputer.ComputePrereleaseVersion(current, merged, identifier, counter, config.SemverPolicy);
@@ -648,7 +649,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                     var info = JsonSerializer.Deserialize<PrereleaseInfo>(json);
                     if (info != null) result.Add(info);
                 }
-                catch { }
+                catch (JsonException ex)
+                {
+                    Console.Error.WriteLine($"Warning: Skipping corrupt prerelease info.json ({infoPath}): {ex.Message}");
+                }
             }
         }
 
@@ -774,10 +778,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         return "main";
     }
 
-    public string SanitizeBranchName(string branchName)
+    public string SanitizeBranchName(string branchName, PreReleaseConfig? preReleaseConfig = null)
     {
-        var config = LoadConfig();
-        if (!config.PreRelease.SanitizeBranchName) return branchName;
+        preReleaseConfig ??= LoadConfig().PreRelease;
+        if (!preReleaseConfig.SanitizeBranchName) return branchName;
 
         // Replace / and other non-alphanumeric with hyphens
         string sanitized = Regex.Replace(branchName, @"[^a-zA-Z0-9]", "-");
@@ -785,9 +789,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         // Remove duplicate hyphens
         sanitized = Regex.Replace(sanitized, @"-+", "-").Trim('-');
 
-        if (sanitized.Length > config.PreRelease.MaxIdentifierLength)
+        if (sanitized.Length > preReleaseConfig.MaxIdentifierLength)
         {
-            sanitized = sanitized.Substring(0, config.PreRelease.MaxIdentifierLength).Trim('-');
+            sanitized = sanitized.Substring(0, preReleaseConfig.MaxIdentifierLength).Trim('-');
         }
 
         return sanitized.ToLowerInvariant();

@@ -38,7 +38,7 @@ class Program
                         serverInfo = new
                         {
                             name = "ChangeSharp MCP Server",
-                            version = "1.0.0"
+                            version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "1.0.0"
                         }
                     });
                 }
@@ -139,7 +139,7 @@ class Program
                             new
                             {
                                 type = "text",
-                                text = $"Pending fragments: {count}\nCurrent version: {current}\nNext version: {next}\nChanges:\n{changeSet.ToString()}"
+                                text = $"Pending fragments: {count}\nCurrent version: {current}\nNext version: {next}\nChanges:\n{changeSet.ToChangelogString()}"
                             }
                         }
                     };
@@ -210,7 +210,7 @@ class Program
 
                     try
                     {
-                        var (version, releaseWarnings) = Manager.Release(DateTime.UtcNow, dryRun);
+                        var (version, releaseWarnings) = Manager.Release(DateTime.Today, dryRun);
                         string warningText = releaseWarnings.Length > 0
                             ? "\nWarnings:\n" + string.Join("\n", releaseWarnings.Select(w => $"  - {w}"))
                             : "";

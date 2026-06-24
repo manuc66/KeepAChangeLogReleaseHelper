@@ -29,7 +29,7 @@ public class ChangeLog
     {
         string unreleasedChanges = ChangeSetMerger.Merge(changesets).ToChangelogString();
 
-        string[] lines = _content.Split(Environment.NewLine);
+        string[] lines = _content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
 
         List<string> beforeUnreleased = lines.TakeWhile(x => !x.StartsWith("## [Unreleased]")).ToList();
 
