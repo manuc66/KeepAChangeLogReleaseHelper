@@ -1,75 +1,99 @@
-# Syntactic Validation Safety Gate
+# API Surface Gate
 
-ChangeSharp ensures that your release notes and your code remain in sync. The **Syntactic Validation Safety Gate** is a feature designed to prevent "version drift" by cross-verifying the SemVer impact declared in fragments against the actual changes in the codebase.
+## Concept
 
-> [!IMPORTANT]
-> **Syntactic vs. Semantic**: This gate focuses on **syntactic** compatibility (API signatures, missing methods, type changes). It cannot detect **behavioral (semantic)** changes. For example, replacing `List.fold` with `List.foldBack` while maintaining the same signature will pass this gate but may break consumers. This tool provides a safety net for public API surfaces, not a guarantee of behavioral identity.
+A single rule: **a fragment must not be lower than the actual impact on the public API surface.**
 
-## The Problem
+```
+Fragment says "### Fixed" (Patch)
+CI detects: new public method added → minimum impact is Minor
+→ ❌ "The API surface changed (Minor). Your Fixed fragment is too low."
+```
 
-In a manual or agent-assisted workflow, it is easy to:
-1.  Add a breaking change but forget to mark it as `### Breaking Changes` or `### Removed`.
-2.  Add a new feature but mark it as `### Fixed` (Patch) instead of `### Added` (Minor).
+This is not an absolute validation — it's a **safety net** that says "you touched the API, your fragment must reflect it."
 
-These errors lead to incorrect SemVer numbers and broken downstream dependencies.
+## Approach: CI does the diff, ChangeSharp enforces the policy
 
-## The Solution
+```
+┌──────────────────────────────────────────┐
+│ CI (GitHub Actions, GitLab CI, etc.)     │
+│                                          │
+│  1. Pick the right api diff tool         │
+│  2. Compare API before/after             │
+│  3. Deduce the minimum impact level      │
+│     (patch | minor | major)              │
+│  4. Pass the info to ChangeSharp         │
+│                                          │
+│  changesharp validate --api-min-level minor
+│  └─ Exit 0 if fragments comply          │
+│  └─ Exit 3 if a fragment is too low     │
+└──────────────────────────────────────────┘
+```
 
-ChangeSharp integrates with external static analysis and diffing tools to audit the API surface.
+ChangeSharp does **not** perform the diff. It only receives a minimum impact level and checks that the fragments are consistent.
 
-### 1. Analysis Layer
-ChangeSharp doesn't reinvent API diffing. Instead, it acts as an orchestrator for:
--   **.NET**: `PublicApiGenerator` or `Microsoft.DotNet.ApiCompat`.
--   **REST APIs**: `openapi-diff` or `swagger-diff`.
--   **CLI**: Schema comparison of help outputs.
+## CLI Interface
 
-### 2. Decision Engine
-The tool compares the **Declared Impact** (from fragments) with the **Observed Impact** (from the analyzer).
+```bash
+# On validate (PR)
+changesharp validate --api-min-level minor
+# → Ensures no fragment is below Minor
 
-| Declared (Fragment) | Observed (Code) | Result | Action |
-| :--- | :--- | :--- | :--- |
-| Patch | Patch | ✅ Pass | Proceed with release. |
-| Minor | Patch | ⚠️ Warn | "You are bumping Minor but only Patch changes detected." |
-| Patch | Minor | ❌ Fail | "New features detected. Upgrade fragment to 'Added'." |
-| Minor | Major | ❌ Fail | "Breaking changes detected. Upgrade fragment to 'Removed'." |
+# On release
+changesharp release --api-min-level major
+# → Checks before releasing
+```
 
-## Configuration
+### Mapping table
 
-In `changesharp.json`, you can define your validation command:
+| `--api-min-level` | Allowed fragments | Rejected fragments |
+|---|---|---|
+| `patch` | All | None (gate disabled) |
+| `minor` | `Added`, `Changed`, `Deprecated`, `Breaking Changes`, `Removed` | `Fixed`, `Security` |
+| `major` | `Breaking Changes`, `Removed` | `Fixed`, `Security`, `Added`, `Changed`, `Deprecated` |
 
-```json
+## CI Example (GitHub Actions)
+
+```yaml
+- name: Run API diff
+  id: apidiff
+  run: |
+    # Team chooses the tool for their stack
+    dotnet tool run faithlife.apidifftool --base HEAD~1 --current . --format json > apidiff.json
+    LEVEL=$(jq -r '.impact' apidiff.json)  # "patch", "minor", or "major"
+    echo "impact=$LEVEL" >> $GITHUB_OUTPUT
+
+- name: Validate fragments against API impact
+  run: changesharp validate --api-min-level ${{ steps.apidiff.outputs.impact }}
+```
+
+The team chooses its diff tool. ChangeSharp only consumes the result.
+
+## Why this approach?
+
+- **Full decoupling** — ChangeSharp doesn't need to know about every diff tool in the world
+- **Multi-language** — CI can use the right tool for each ecosystem
+- **Simple to implement** — one CLI flag, one lookup table
+- **Unix philosophy** — each tool does one thing well
+- **No snapshot management** — CI handles before/after as it sees fit
+
+## Implementation
+
+In `validate` and `release`:
+
+```csharp
+if (parseResult.GetValue(apiMinLevelOption) is string minLevel)
 {
-  "Validation": {
-    "SyntacticGate": {
-      "Enabled": true,
-      "Tool": "dotnet-api-diff",
-      "Arguments": "--base-tag last-release --current-dir .",
-      "Mode": "Enforce"
+    var fragments = LoadFragments();
+    int maxFragmentImpact = fragments.Max(f => GetSemVerImpact(f.Category));
+    int requiredImpact = ParseLevel(minLevel); // patch=0, minor=1, major=2
+
+    if (maxFragmentImpact < requiredImpact)
+    {
+        Console.Error.WriteLine($"API surface requires a {minLevel} bump, but fragments only declare {maxFragmentImpact}.");
+        return ExitCodeValidationError;
     }
-  }
 }
 ```
 
-## Reliability & Environment Control
-
-In enterprise CI runners, external tools might not always be available or properly configured. ChangeSharp follows a strict reliability contract for the Syntactic Gate:
-
-### ⚙️ Behavior on Tool Failure
-
-You can configure how ChangeSharp reacts if an external analyzer fails or is missing via the `Mode` setting:
-
--   **`Enforce` (Default)**: If the tool is missing or returns a non-zero exit code, ChangeSharp will exit with **Exit Code 1**. This prevents accidental releases when the safety gate is broken.
--   **`Warn`**: ChangeSharp will display a warning but proceed with the validation/release. Useful during migrations or if the tool is flaky.
--   **`Disabled`**: The gate is completely skipped.
-
-### 🔍 Tool Availability Check
-
-ChangeSharp performs a "Pre-flight Check" before running the gate. If `Tool` is not found in the `PATH`, it will fail immediately with a descriptive error:
-`Error: Syntactic Validation tool 'openapi-diff' not found in PATH. Ensure it is installed in your CI runner.`
-
-## Continuous Integration
-
-This gate is intended to be run:
-1.  **Locally**: During `changesharp validate` or `changesharp release --dry-run`.
-2.  **In PRs**: By the **ChangeSharp Bot** to notify developers of mismatching fragments before merge.
-3.  **In AI Workflows**: By the MCP server to ensure agents don't accidentally release breaking changes without proper documentation.
+~20 lines of code. No provider, no JSON parsing, no external integration.
