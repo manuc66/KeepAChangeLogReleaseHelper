@@ -378,6 +378,27 @@ public class WorkspaceManagerTests
     }
 
     [Test]
+    public void CreateFragment_LongMessage_TruncatesSlug()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+
+        string configPath = Path.Combine(_testDir, "changesharp.json");
+        File.WriteAllText(configPath, "{\"FragmentNaming\": {\"IncludeBranchName\": false}}");
+
+        string longMessage = new string('x', 100);
+        string path = manager.CreateFragment(longMessage, "Added");
+        string filename = Path.GetFileName(path);
+
+        // Slug is truncated to 50 chars
+        Assert.That(filename.Length, Is.LessThan(75));
+        Assert.That(filename, Does.Match(@"^\d{17}-[a-z]{1,50}\.md$"));
+        // The slug part (between timestamp and .md) should be at most 50 chars
+        string slug = Path.GetFileNameWithoutExtension(filename).Substring(18); // after timestamp + hyphen
+        Assert.That(slug.Length, Is.LessThanOrEqualTo(50));
+    }
+
+    [Test]
     public void Initialize_SortsVersionTargets_Alphabetically()
     {
         var manager = new WorkspaceManager(_testDir);

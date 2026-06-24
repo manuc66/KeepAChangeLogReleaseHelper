@@ -6,12 +6,19 @@ public class ChangeSet
 {
     public Dictionary<string, List<string>> Sections { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 
+    [Obsolete("Use GetSection(\"Breaking Changes\") to support custom categories.")]
     public List<string> Breaking => GetSection("Breaking Changes");
+    [Obsolete("Use GetSection(\"Changed\") to support custom categories.")]
     public List<string> Changed => GetSection("Changed");
+    [Obsolete("Use GetSection(\"Removed\") to support custom categories.")]
     public List<string> Removed => GetSection("Removed");
+    [Obsolete("Use GetSection(\"Added\") to support custom categories.")]
     public List<string> Added => GetSection("Added");
+    [Obsolete("Use GetSection(\"Deprecated\") to support custom categories.")]
     public List<string> Deprecated => GetSection("Deprecated");
+    [Obsolete("Use GetSection(\"Fixed\") to support custom categories.")]
     public List<string> Fixed => GetSection("Fixed");
+    [Obsolete("Use GetSection(\"Security\") to support custom categories.")]
     public List<string> Security => GetSection("Security");
 
     public List<string> GetSection(string name)

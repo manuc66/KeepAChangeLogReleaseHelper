@@ -36,6 +36,19 @@ public class ChangelogParserTests
     }
 
     [Test]
+    public void Parse_Deindent_StripsCommonIndentation()
+    {
+        var fragment = "    ### Fixed\n    - Bug fix\n    - Another fix\n";
+        var parser = new ChangelogParser();
+        var result = parser.Parse(fragment);
+
+        Assert.That(result.Sections.ContainsKey("Fixed"), Is.True);
+        var items = result.Sections["Fixed"];
+        Assert.That(items, Has.Count.EqualTo(2));
+        Assert.That(items[0], Does.Contain("Bug fix"));
+    }
+
+    [Test]
     public void Parse_PreservesContentWithInlineHash()
     {
         var fragment = @"### Fixed
@@ -56,7 +69,7 @@ public class ChangelogParserTests
 public class ChangeSetMergerTests
 {
     [Test]
-    public void ItComputeAMajorFromChanged()
+    public void Merge_CombinesChangesetsInOrder()
     {
         string[] changesets =
         {

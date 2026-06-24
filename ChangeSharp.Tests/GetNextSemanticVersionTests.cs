@@ -8,7 +8,7 @@ public class GetNextSemanticVersionTests
     }
 
     [Test]
-    public void ItComputeAMinorFromChanged()
+    public void ItComputesAMinorFromChanged()
     {
         string changeset = @"
         ### Changed
@@ -22,7 +22,7 @@ public class GetNextSemanticVersionTests
     }
 
     [Test]
-    public void ItComputeAMajorFromBreakingChanges()
+    public void ItComputesAMajorFromBreakingChanges()
     {
         string changeset = @"
         ### Breaking Changes
@@ -51,7 +51,7 @@ public class GetNextSemanticVersionTests
     }
 
     [Test]
-    public void ItComputeAMajorrFromRemoved()
+    public void ItComputesAMajorFromRemoved()
     {
         string changeset = @"
 
@@ -203,7 +203,7 @@ public class GetNextSemanticVersionTests
     }
 
     [Test]
-    public void ItComputeAPathIfOnlyFixedIsFilled()
+    public void ItComputesAPatchIfOnlyFixedIsFilled()
     {
         string changeset = @"
         ### Added
@@ -228,7 +228,7 @@ public class GetNextSemanticVersionTests
     }
 
     [Test]
-    public void ItComputeAPathIfOnlySecurityIsFilled()
+    public void ItComputesAPatchIfOnlySecurityIsFilled()
     {
         string changeset = @"
         ### Added

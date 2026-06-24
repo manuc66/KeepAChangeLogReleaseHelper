@@ -73,6 +73,22 @@ public class PrereleaseTests
     }
 
     [Test]
+    public void CreatePrerelease_DryRun_DoesNotPersistFiles()
+    {
+        var manager = new WorkspaceManager(_tempPath);
+        manager.CreateFragment("Feature 1", "Added");
+
+        string prereleasesDir = Path.Combine(_tempPath, ".changesharp/prereleases");
+
+        var (version, _) = manager.CreatePrerelease(branch: "feat/test", dryRun: true);
+
+        Assert.That(version, Is.EqualTo("0.1.0-feat-test.1"));
+        // Dry-run should NOT create a branch-specific prerelease directory
+        string branchDir = Path.Combine(prereleasesDir, "feat-test");
+        Assert.That(Directory.Exists(branchDir), Is.False);
+    }
+
+    [Test]
     public void PromotePrerelease_UpdatesChangelogWithStableVersion()
     {
         var manager = new WorkspaceManager(_tempPath);
