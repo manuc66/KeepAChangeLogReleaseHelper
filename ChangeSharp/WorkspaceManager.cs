@@ -667,50 +667,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         var info = JsonSerializer.Deserialize<PrereleaseInfo>(json);
         if (info == null) throw new InvalidOperationException("Failed to load pre-release info.");
 
-        // Promotion uses the base version (final stable version)
-        string finalVersion = info.BaseVersion;
+        if (dryRun)
+        {
+            // Preview: show what version would be released based on current fragments
+            GetStatus(out int count, out _, out _, out string nextVersion);
+            if (count == 0)
+                throw new InvalidOperationException("No unreleased fragments found to promote.");
+            return nextVersion;
+        }
 
-        if (dryRun) return finalVersion;
-
-        // Use the Release method but we need to ensure it uses the correct version
-        // Actually, Release() recalculates the version. 
-        // "The final version is promoted without recalculating the version number."
-        // We might need a variation of Release that takes a forced version.
-        
-        // For now, let's implement it here or refactor Release
         return FinalizePromotion(info, dryRun);
     }
 
     private string FinalizePromotion(PrereleaseInfo info, bool dryRun)
     {
-        // This is basically Release() but with a specific version
         var config = LoadConfig();
-        string unreleasedPath = Path.Combine(_basePath, config.UnreleasedDir);
-        string changelogPath = Path.Combine(_basePath, config.ChangelogPath);
+        GetStatus(out int fragmentCount, out _, out _, out _);
 
-        GetStatus(out int fragmentCount, out ChangeSet mergedChangeSet, out _, out _);
-
-        // Even if we promote, we still need fragments?
-        // Yes, fragments are what we are releasing.
         if (fragmentCount == 0)
         {
             throw new InvalidOperationException("No unreleased fragments found to promote.");
         }
 
-        string changelogContent = File.Exists(changelogPath)
-            ? File.ReadAllText(changelogPath, Encoding.UTF8)
-            : "# Changelog..."; // Simplified
+        var (resultVersion, _) = Release(DateTime.Today, dryRun, forcedVersion: null);
 
-        var changeLog = new ChangeLog(changelogContent);
-        // We need a way to force the version in ChangeLog.Release
-        // Let's add that.
-        
-        // For now, assume info.BaseVersion IS what ComputeVersion would give.
-        // The spec says "without recalculating", so we should probably use info.BaseVersion.
-        
-        var (resultVersion, _) = Release(DateTime.Today, dryRun, info.BaseVersion);
-        
-        // Clean up prerelease info
         string branchSlug = SanitizeBranchName(info.Branch);
         string prereleaseDir = Path.Combine(_basePath, config.PrereleasesDir, branchSlug);
         if (Directory.Exists(prereleaseDir)) Directory.Delete(prereleaseDir, true);
