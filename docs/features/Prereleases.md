@@ -87,18 +87,18 @@ Promote the latest pre-release to a final release:
 
 Example: `1.4.0-feature-payment-api.3` → `1.4.0`
 
-The final version is promoted without recalculating the version number.
+Preview without making changes:
+`changesharp prerelease --dry-run`
+
+The final version is calculated from current fragments (not from the pre-release snapshot).
 
 ## Release Channels
-Prepend a channel label to the pre-release identifier:
+Prepend a channel label to the pre-release identifier (combined with the branch slug):
 * `changesharp prerelease --channel alpha`
 * `changesharp prerelease --channel beta`
 * `changesharp prerelease --channel rc`
 
-Examples:
-* `1.4.0-alpha.1`
-* `1.4.0-beta.1`
-* `1.4.0-rc.1`
-
-Channels may also be combined with branch identifiers:
-`1.4.0-feature-payment-api.alpha.1`
+Examples (on branch `feature/payment-api`):
+* `1.4.0-feature-payment-api.alpha.1`
+* `1.4.0-feature-payment-api.beta.1`
+* `1.4.0-feature-payment-api.rc.1`
