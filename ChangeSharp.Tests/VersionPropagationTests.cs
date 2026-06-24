@@ -41,6 +41,22 @@ public class VersionPropagationTests
     }
 
     [Test]
+    public void MSBuildHandler_UpdatesBothVersionAndVersionPrefix_WhenBothExist()
+    {
+        string csprojPath = Path.Combine(_tempPath, "test_dual.csproj");
+        File.WriteAllText(csprojPath, "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><Version>1.0.0</Version><VersionPrefix>1.0.0</VersionPrefix></PropertyGroup></Project>");
+
+        var handler = new MSBuildVersionHandler();
+        var target = new VersionTargetConfig { Path = "test_dual.csproj" };
+
+        handler.UpdateVersion(_tempPath, target, "2.0.0");
+
+        string updated = File.ReadAllText(csprojPath);
+        Assert.That(updated, Does.Contain("<Version>2.0.0</Version>"));
+        Assert.That(updated, Does.Contain("<VersionPrefix>2.0.0</VersionPrefix>"));
+    }
+
+    [Test]
     public void MSBuildHandler_AddsVersionElement_IfMissing()
     {
         string csprojPath = Path.Combine(_tempPath, "test_no_version.csproj");

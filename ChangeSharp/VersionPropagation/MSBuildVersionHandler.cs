@@ -44,12 +44,9 @@ public class MSBuildVersionHandler : IVersionPropagationHandler
                 }
             }
         }
-        else if (versionElements.Any())
-        {
-            foreach (var el in versionElements) el.Value = nextVersion;
-        }
         else
         {
+            foreach (var el in versionElements) el.Value = nextVersion;
             foreach (var el in versionPrefixElements) el.Value = nextVersion;
         }
 

@@ -421,6 +421,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                 throw new InvalidOperationException("No unreleased fragments found to release.");
             }
 
+            // Validate all fragments before moving any of them
+            var validationParser = new ChangelogParser();
+            foreach (var f in unreleasedFragments)
+            {
+                string content = File.ReadAllText(f, Encoding.UTF8);
+                var doc = Markdig.Markdown.Parse(content);
+                if (doc.Count == 0 || doc.FirstOrDefault() is not Markdig.Syntax.HeadingBlock hb || hb.Level != 3)
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid fragment detected: '{Path.GetRelativePath(_basePath, f)}'. " +
+                        "Fragment must start with a level 3 heading (### Category). " +
+                        "Run 'changesharp validate' for details.");
+                }
+                var changeSet = validationParser.Parse(content);
+                if (changeSet.IsEmpty())
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid fragment detected: '{Path.GetRelativePath(_basePath, f)}'. " +
+                        "Fragment is empty or has no recognized categories. " +
+                        "Run 'changesharp validate' for details.");
+                }
+            }
+
             if (!Directory.Exists(releasingPath)) Directory.CreateDirectory(releasingPath);
             foreach (var f in unreleasedFragments)
             {
@@ -448,7 +471,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         string? currentContent = changeLog.GetVersionContent(currentVersion);
         if (currentVersion != "0.0.0" && currentContent != null && currentContent == mergedChangeSet.ToChangelogString().Trim())
         {
-            nextVersion = currentVersion;
+            nextVersion = forcedVersion ?? currentVersion;
         }
         else
         {

@@ -3,7 +3,7 @@ using Markdig.Syntax;
 
 namespace ChangeSharp;
 
-internal class ChangelogParser
+public class ChangelogParser
 {
     public ChangelogParser()
     {
@@ -76,7 +76,7 @@ internal class ChangelogParser
         for (int i = 0; i < lines.Length; i++)
         {
             string trimmed = lines[i].TrimStart(' ', '\t');
-            if (trimmed.StartsWith("#"))
+            if (IsHeading(trimmed))
             {
                 lines[i] = trimmed; // Trim headings completely
             }
@@ -102,7 +102,7 @@ internal class ChangelogParser
         // Step 2: Strip the minimum indentation from non-heading lines
         for (int i = 0; i < lines.Length; i++)
         {
-            if (lines[i].StartsWith("#"))
+            if (IsHeading(lines[i]))
             {
                 continue;
             }
@@ -118,5 +118,14 @@ internal class ChangelogParser
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static bool IsHeading(string line)
+    {
+        // Keep a Changelog fragments use level-3 headings (###) for categories.
+        // Only treat lines starting with "###" as headings to avoid misinterpreting
+        // content lines that happen to start with "#" or "##".
+        // Lines with other heading levels are ignored by the parser anyway.
+        return line.StartsWith("###") && (line.Length == 3 || line[3] == ' ');
     }
 }

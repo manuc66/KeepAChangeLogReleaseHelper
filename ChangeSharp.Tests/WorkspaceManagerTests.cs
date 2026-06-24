@@ -101,6 +101,69 @@ public class WorkspaceManagerTests
     }
 
     [Test]
+    public void Release_InvalidFragment_ThrowsBeforeMovingFiles()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+
+        string unreleasedDir = Path.Combine(_testDir, ".changesharp/unreleased");
+        string releasingDir = Path.Combine(_testDir, ".changesharp/releasing");
+
+        // Write an invalid fragment directly (no heading)
+        File.WriteAllText(Path.Combine(unreleasedDir, "invalid.md"), "Some text without heading\n");
+
+        // Act & Assert
+        var ex = Assert.Throws<InvalidOperationException>(() => manager.Release(DateTime.Today));
+        Assert.That(ex.Message, Does.Contain("Invalid"));
+
+        // Files should NOT have been moved to releasing/
+        Assert.That(File.Exists(Path.Combine(unreleasedDir, "invalid.md")), Is.True);
+        if (Directory.Exists(releasingDir))
+            Assert.That(Directory.GetFiles(releasingDir, "*.md").Length, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Release_ValidFragment_StillWorks()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        manager.CreateFragment("Feature", "Added");
+
+        var (nextVersion, _) = manager.Release(DateTime.Today);
+
+        Assert.That(nextVersion, Is.EqualTo("0.1.0"));
+        string unreleasedDir = Path.Combine(_testDir, ".changesharp/unreleased");
+        Assert.That(Directory.GetFiles(unreleasedDir, "*.md").Length, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Release_ForcedVersion_RespectedOnResume()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        string fragmentPath = manager.CreateFragment("Added a feature", "Added");
+
+        // Simulate interruption after CHANGELOG update but before cleanup
+        string releasingDir = Path.Combine(_testDir, ".changesharp/releasing");
+        Directory.CreateDirectory(releasingDir);
+        string filename = Path.GetFileName(fragmentPath);
+        File.Move(fragmentPath, Path.Combine(releasingDir, filename));
+
+        var releaseDate = DateTime.Today;
+        string changelogPath = Path.Combine(_testDir, "CHANGELOG.md");
+        string content = File.ReadAllText(changelogPath);
+        var changeLog = new ChangeLog(content);
+        var updated = changeLog.ReleaseWithVersion(releaseDate, "0.1.0", "### Added\n- Added a feature");
+        File.WriteAllText(changelogPath, updated.ToString());
+
+        // Act — pass a forced version different from the resumed one
+        var (nextVersion, _) = manager.Release(releaseDate, forcedVersion: "99.99.99");
+
+        // Assert — forcedVersion should win over resume detection
+        Assert.That(nextVersion, Is.EqualTo("99.99.99"));
+    }
+
+    [Test]
     public void Release_Conflict_ThrowsException()
     {
         var manager = new WorkspaceManager(_testDir);
