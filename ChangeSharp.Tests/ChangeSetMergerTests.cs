@@ -8,16 +8,16 @@ public class ChangeSetMergerTests
         string[] changesets =
         {
             @"
-        ## Changed
+        ### Changed
         - Improved existing feature 1.
 
         ",
-            @" ## Fixed
+            @" ### Fixed
         - Bug fix 1.
         - Bug fix 2.
         ",
             @"
-        ## Added
+        ### Added
         - New feature 1.
         - New feature 2."
         };

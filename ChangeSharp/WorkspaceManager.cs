@@ -184,10 +184,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             {
                 result.Errors.Add("Fragment is empty.");
             }
-            else if (changeSet.Sections.Keys.All(k => !config.SemverPolicy.Mappings.ContainsKey(k)))
+
+            // Flag each unrecognized section individually
+            var validCategories = new HashSet<string>(config.SemverPolicy.Mappings.Keys, StringComparer.OrdinalIgnoreCase);
+            foreach (var section in changeSet.Sections)
             {
-                string validCats = string.Join(", ", config.SemverPolicy.Mappings.Keys);
-                result.Errors.Add($"Fragment has no recognized categories. Recognized: {validCats}");
+                if (section.Value.Count > 0 && !validCategories.Contains(section.Key))
+                {
+                    string validCats = string.Join(", ", config.SemverPolicy.Mappings.Keys);
+                    result.Errors.Add($"Unrecognized category '{section.Key}'. Recognized: {validCats}");
+                }
             }
 
             // More specific validation using Markdig directly

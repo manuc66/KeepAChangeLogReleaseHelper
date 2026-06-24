@@ -212,7 +212,7 @@ public class WorkspaceManagerTests
         // unknown_cat.md
         var unknownResult = results.First(r => r.FilePath.EndsWith("unknown_cat.md"));
         Assert.That(unknownResult.IsValid, Is.False);
-        Assert.That(unknownResult.Errors.Any(e => e.Contains("no recognized categories")), Is.True);
+        Assert.That(unknownResult.Errors.Any(e => e.Contains("Unrecognized category")), Is.True);
         
         // wrong_heading.md
         var headingResult = results.First(r => r.FilePath.EndsWith("wrong_heading.md"));

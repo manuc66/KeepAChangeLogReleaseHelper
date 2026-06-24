@@ -11,7 +11,7 @@ public class GetNextSemanticVersionTests
     public void ItComputeAMinorFromChanged()
     {
         string changeset = @"
-        ## Changed
+        ### Changed
         - Improved existing feature 1.
 
         ";
@@ -25,7 +25,7 @@ public class GetNextSemanticVersionTests
     public void ItComputeAMajorFromBreakingChanges()
     {
         string changeset = @"
-        ## Breaking Changes
+        ### Breaking Changes
         - Improved existing feature 1.
 
         ";
@@ -39,7 +39,7 @@ public class GetNextSemanticVersionTests
     public void ItComputeAMinorFromAdded()
     {
         string changeset = @"
-        ## Added
+        ### Added
         - New feature 1.
         - New feature 2.
 
@@ -55,7 +55,7 @@ public class GetNextSemanticVersionTests
     {
         string changeset = @"
 
-        ## Removed
+        ### Removed
         - Removed feature 2.
         ";
 
@@ -69,7 +69,7 @@ public class GetNextSemanticVersionTests
     {
         string changeset = @"
 
-        ## Security
+        ### Security
         - Security update 1.
         ";
 
@@ -82,7 +82,7 @@ public class GetNextSemanticVersionTests
     public void ItComputeAPatchFromOnlyFixes()
     {
         string changeset = @"
-        ## Fixed
+        ### Fixed
         - Bug fix 1.
         - Bug fix 2.
 ";
@@ -96,24 +96,24 @@ public class GetNextSemanticVersionTests
     public void ItComputeAMajorFromAFullChangeSet()
     {
         string changeset = @"
-        ## Added
+        ### Added
         - New feature 1.
         - New feature 2.
 
-        ## Changed
+        ### Changed
         - Improved existing feature 1.
 
-        ## Deprecated
+        ### Deprecated
         - Deprecated feature 1.
 
-        ## Removed
+        ### Removed
         - Removed feature 2.
 
-        ## Fixed
+        ### Fixed
         - Bug fix 1.
         - Bug fix 2.
 
-        ## Security
+        ### Security
         - Security update 1.
         ";
 
@@ -127,22 +127,22 @@ public class GetNextSemanticVersionTests
     public void ItComputeAMinorIfChangedANdRemovedAreEmpty()
     {
         string changeset = @"
-        ## Added
+        ### Added
         - New feature 1.
         - New feature 2.
 
-        ## Changed
+        ### Changed
 
-        ## Deprecated
+        ### Deprecated
         - Deprecated feature 1.
 
-        ## Removed
+        ### Removed
 
-        ## Fixed
+        ### Fixed
         - Bug fix 1.
         - Bug fix 2.
 
-        ## Security
+        ### Security
         - Security update 1.
         
         ";
@@ -156,19 +156,19 @@ public class GetNextSemanticVersionTests
     public void ItComputeAFixIfOnlyFixedAndSecurityAreFilled()
     {
         string changeset = @"
-        ## Added
+        ### Added
 
-        ## Changed
+        ### Changed
 
-        ## Deprecated
+        ### Deprecated
 
-        ## Removed
+        ### Removed
 
-        ## Fixed
+        ### Fixed
         - Bug fix 1.
         - Bug fix 2.
 
-        ## Security
+        ### Security
         - Security update 1.
         
         ";
@@ -182,19 +182,19 @@ public class GetNextSemanticVersionTests
     public void ItComputeAPathIfOnlyFixedIsFilled()
     {
         string changeset = @"
-        ## Added
+        ### Added
 
-        ## Changed
+        ### Changed
 
-        ## Deprecated
+        ### Deprecated
 
-        ## Removed
+        ### Removed
 
-        ## Fixed
+        ### Fixed
         - Bug fix 1.
         - Bug fix 2.
 
-        ## Security
+        ### Security
         
         ";
 
@@ -207,17 +207,17 @@ public class GetNextSemanticVersionTests
     public void ItComputeAPathIfOnlySecurityIsFilled()
     {
         string changeset = @"
-        ## Added
+        ### Added
 
-        ## Changed
+        ### Changed
 
-        ## Deprecated
+        ### Deprecated
 
-        ## Removed
+        ### Removed
 
-        ## Fixed
+        ### Fixed
 
-        ## Security
+        ### Security
         - Security update 1.
         
         ";

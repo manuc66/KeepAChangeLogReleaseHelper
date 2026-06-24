@@ -26,14 +26,18 @@ internal class ChangelogParser
 
         foreach (var block in document)
         {
-            if (block is HeadingBlock headingBlock)
+            if (block is HeadingBlock headingBlock && headingBlock.Level == 3)
             {
-                // Extract heading text from the source line
                 string headingText = deindented.Substring(headingBlock.Span.Start, headingBlock.Span.Length)
                     .TrimStart('#')
                     .Trim();
 
                 currentList = result.GetSection(headingText);
+            }
+            else if (block is HeadingBlock)
+            {
+                // Skip non-level-3 headings (validated in WorkspaceManager.Validate)
+                continue;
             }
             else if (currentList != null)
             {

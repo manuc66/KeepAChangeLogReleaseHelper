@@ -25,16 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Good examples and basic guidelines, including proper date formatting.
 - Counter-examples: ""What makes unicorns cry?"".
 ").UpdateUnReleased(@"
-        ## Changed
+        ### Changed
         - Improved existing feature 1.
 
         ",
-            @" ## Fixed
+            @" ### Fixed
         - Bug fix 1.
         - Bug fix 2.
         ",
             @"
-        ## Added
+        ### Added
         - New feature 1.
         - New feature 2."
         ).ToString();
@@ -104,16 +104,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Good examples and basic guidelines, including proper date formatting.
 - Counter-examples: ""What makes unicorns cry?"".
 ").UpdateUnReleased(@"
-        ## Changed
+        ### Changed
         - Improved existing feature 1.
 
         ",
-            @" ## Fixed
+            @" ### Fixed
         - Bug fix 1.
         - Bug fix 2.
         ",
             @"
-        ## Added
+        ### Added
         - New feature 1.
         - New feature 2."
         ).ToString();
@@ -255,16 +255,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Good examples and basic guidelines, including proper date formatting.
 - Counter-examples: ""What makes unicorns cry?"".
 ").Release(new DateTime(2023, 7, 9, 12, 5, 2, 3, 11),@"
-        ## Breaking Changes
+        ### Breaking Changes
         - Improved existing feature 1.
 
         ",
-            @" ## Fixed
+            @" ### Fixed
         - Bug fix 1.
         - Bug fix 2.
         ",
             @"
-        ## Added
+        ### Added
         - New feature 1.
         - New feature 2."
         );
