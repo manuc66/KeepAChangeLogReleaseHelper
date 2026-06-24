@@ -74,7 +74,7 @@ public class NextVersionComputer
         return $"{prefix}{nextVersion}";
     }
 
-    private static int ParseImpact(string impact)
+    public static int ParseImpact(string impact)
     {
         return impact.ToLowerInvariant() switch
         {

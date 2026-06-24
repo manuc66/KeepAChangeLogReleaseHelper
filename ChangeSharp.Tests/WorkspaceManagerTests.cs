@@ -329,4 +329,89 @@ public class WorkspaceManagerTests
         Assert.That(indexA, Is.LessThan(indexM));
         Assert.That(indexM, Is.LessThan(indexZ));
     }
+
+    [Test]
+    public void CheckApiMinLevel_NoFragments_AlwaysPasses()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+
+        var (pass, impact, name) = manager.CheckApiMinLevel("major");
+
+        Assert.That(pass, Is.True);
+        Assert.That(impact, Is.EqualTo(0));
+        Assert.That(name, Is.EqualTo("none"));
+    }
+
+    [Test]
+    public void CheckApiMinLevel_FixedFragment_PassesPatch_FailsMinor()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        manager.CreateFragment("Fix a bug", "Fixed");
+
+        var (patchPass, _, _) = manager.CheckApiMinLevel("patch");
+        Assert.That(patchPass, Is.True);
+
+        var (minorPass, impact, name) = manager.CheckApiMinLevel("minor");
+        Assert.That(minorPass, Is.False);
+        Assert.That(impact, Is.EqualTo(1));
+        Assert.That(name, Is.EqualTo("patch"));
+
+        var (majorPass, _, _) = manager.CheckApiMinLevel("major");
+        Assert.That(majorPass, Is.False);
+    }
+
+    [Test]
+    public void CheckApiMinLevel_AddedFragment_PassesMinor_FailsMajor()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        manager.CreateFragment("New feature", "Added");
+
+        var (patchPass, _, _) = manager.CheckApiMinLevel("patch");
+        Assert.That(patchPass, Is.True);
+
+        var (minorPass, _, _) = manager.CheckApiMinLevel("minor");
+        Assert.That(minorPass, Is.True);
+
+        var (majorPass, impact, name) = manager.CheckApiMinLevel("major");
+        Assert.That(majorPass, Is.False);
+        Assert.That(impact, Is.EqualTo(2));
+        Assert.That(name, Is.EqualTo("minor"));
+    }
+
+    [Test]
+    public void CheckApiMinLevel_BreakingFragment_PassesMajor()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        manager.CreateFragment("Breaking API change", "Breaking Changes");
+
+        var (pass, impact, name) = manager.CheckApiMinLevel("major");
+
+        Assert.That(pass, Is.True);
+        Assert.That(impact, Is.EqualTo(3));
+        Assert.That(name, Is.EqualTo("major"));
+    }
+
+    [Test]
+    public void CheckApiMinLevel_MixedFragments_UsesHighestImpact()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        manager.CreateFragment("Fix a bug", "Fixed");        // impact 1
+        manager.CreateFragment("Deprecate old API", "Deprecated"); // impact 2
+
+        var (patchPass, _, _) = manager.CheckApiMinLevel("patch");
+        Assert.That(patchPass, Is.True);
+
+        var (minorPass, impact, name) = manager.CheckApiMinLevel("minor");
+        Assert.That(minorPass, Is.True);
+        Assert.That(impact, Is.EqualTo(2));
+        Assert.That(name, Is.EqualTo("minor"));
+
+        var (majorPass, _, _) = manager.CheckApiMinLevel("major");
+        Assert.That(majorPass, Is.False);
+    }
 }

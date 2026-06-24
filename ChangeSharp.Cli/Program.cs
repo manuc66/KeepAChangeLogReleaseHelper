@@ -203,9 +203,13 @@ class Program
 
         // validate command
         var requireFragmentsOption = new Option<bool>("--require-fragments") { Description = "Fail if no unreleased fragments are found." };
+        var apiMinLevelOption = new Option<string>("--api-min-level") { Description = "Minimum API impact level (patch, minor, major). Fails if fragments are below this level." };
+        var apiMinLevelWarnOption = new Option<bool>("--api-min-level-warn") { Description = "Only warn if --api-min-level is not met, do not fail." };
         var validateCommand = new Command("validate", "Validate unreleased fragments for correct format.")
         {
-            requireFragmentsOption
+            requireFragmentsOption,
+            apiMinLevelOption,
+            apiMinLevelWarnOption
         };
         validateCommand.SetAction(parseResult =>
         {
@@ -244,6 +248,15 @@ class Program
                     }
                 }
 
+                // API min level check
+                string? apiMinLevel = parseResult.GetValue(apiMinLevelOption);
+                if (apiMinLevel != null)
+                {
+                    bool warnOnly = parseResult.GetValue(apiMinLevelWarnOption);
+                    int? apiResult = CheckApiMinLevel(manager, apiMinLevel, warnOnly);
+                    if (apiResult.HasValue) return apiResult.Value;
+                }
+
                 if (errorCount > 0)
                 {
                     Console.WriteLine();
@@ -269,7 +282,9 @@ class Program
         var releaseCommand = new Command("release", "Aggregate fragments, bump version, update CHANGELOG.md, and clean up.")
         {
             dryRunOption,
-            allowEmptyOption
+            allowEmptyOption,
+            apiMinLevelOption,
+            apiMinLevelWarnOption
         };
         releaseCommand.SetAction(parseResult =>
         {
@@ -279,7 +294,7 @@ class Program
             {
                 var manager = new WorkspaceManager();
                 manager.GetStatus(out int count, out ChangeSet merged, out string current, out string next);
-                
+
                 if (count == 0)
                 {
                     if (allowEmpty)
@@ -289,6 +304,15 @@ class Program
                     }
                     Console.Error.WriteLine("Error: No unreleased fragments found. Nothing to release.");
                     return ExitCodeNoChanges;
+                }
+
+                // API min level check
+                string? apiMinLevel = parseResult.GetValue(apiMinLevelOption);
+                if (apiMinLevel != null)
+                {
+                    bool warnOnly = parseResult.GetValue(apiMinLevelWarnOption);
+                    int? apiResult = CheckApiMinLevel(manager, apiMinLevel, warnOnly);
+                    if (apiResult.HasValue) return apiResult.Value;
                 }
 
                 if (dryRun)
@@ -418,6 +442,27 @@ class Program
 
         ParseResult parseResult = rootCommand.Parse(args);
         return await parseResult.InvokeAsync();
+    }
+
+    private static int? CheckApiMinLevel(WorkspaceManager manager, string minLevel, bool warnOnly)
+    {
+        var (pass, maxImpact, maxLevelName) = manager.CheckApiMinLevel(minLevel);
+
+        if (!pass)
+        {
+            string message = $"API surface requires at least a '{minLevel}' bump, but fragments only reach '{maxLevelName}' (level {maxImpact}).";
+
+            if (warnOnly)
+            {
+                Console.WriteLine($"Warning: {message}");
+                return null; // continue
+            }
+
+            Console.Error.WriteLine($"Error: {message}");
+            return ExitCodeValidationError;
+        }
+
+        return null;
     }
 
     private static string? PromptForMessage()

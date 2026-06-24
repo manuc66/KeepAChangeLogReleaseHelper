@@ -212,6 +212,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         return results;
     }
 
+    public (bool Pass, int MaxImpact, string MaxLevelName) CheckApiMinLevel(string minLevel)
+    {
+        var config = LoadConfig();
+        GetStatus(out int count, out ChangeSet merged, out _, out _);
+
+        // No fragments → nothing to check, always pass
+        if (count == 0)
+            return (true, 0, "none");
+
+        int maxImpact = 0;
+        string maxLevelName = "none";
+
+        foreach (var pair in merged.Sections)
+        {
+            if (pair.Value.Count > 0 && config.SemverPolicy.Mappings.TryGetValue(pair.Key, out var impact))
+            {
+                int impactValue = NextVersionComputer.ParseImpact(impact);
+                if (impactValue > maxImpact)
+                {
+                    maxImpact = impactValue;
+                    maxLevelName = impact.ToLowerInvariant();
+                }
+            }
+        }
+
+        int required = NextVersionComputer.ParseImpact(minLevel);
+        return (maxImpact >= required, maxImpact, maxLevelName);
+    }
+
     public string CreateFragment(string message, string category)
     {
         var config = LoadConfig();
