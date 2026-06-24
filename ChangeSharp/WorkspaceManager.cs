@@ -580,7 +580,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         };
     }
 
-    public string CreatePrerelease(string? branch = null, string? channel = null, bool dryRun = false)
+    public (string Version, string? Warning) CreatePrerelease(string? branch = null, string? channel = null, bool dryRun = false)
     {
         var config = LoadConfig();
         string branchName = branch ?? GetCurrentBranch();
@@ -601,6 +601,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
         // Determine next counter
         int counter = 1;
+        string? warning = null;
         string prereleaseDir = Path.Combine(_basePath, config.PrereleasesDir, branchSlug);
         string infoPath = Path.Combine(prereleaseDir, "info.json");
 
@@ -612,32 +613,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                 var info = JsonSerializer.Deserialize<PrereleaseInfo>(json);
                 if (info != null)
                 {
-                    // If the base version is the same, increment counter
-                    // If base version increased (more changes), reset counter? 
-                    // Actually, the spec examples show subsequent executions incrementing the counter.
-                    // Let's check if the base version changed.
                     if (info.BaseVersion == nextStable)
                     {
                         counter = info.Counter + 1;
                     }
                     else
                     {
-                        // New base version, reset counter
                         counter = 1;
                     }
                 }
             }
             catch (JsonException ex)
             {
-                Console.Error.WriteLine($"Warning: Corrupt prerelease info.json ({infoPath}), resetting counter: {ex.Message}");
+                warning = $"Corrupt prerelease info.json ({infoPath}), resetting counter: {ex.Message}";
             }
         }
 
         string nextPrerelease = NextVersionComputer.ComputePrereleaseVersion(current, merged, identifier, counter, config.SemverPolicy);
 
-        if (dryRun) return nextPrerelease;
+        if (dryRun) return (nextPrerelease, warning);
 
-        // Save info
         if (!Directory.Exists(prereleaseDir)) Directory.CreateDirectory(prereleaseDir);
         var newInfo = new PrereleaseInfo
         {
@@ -650,16 +645,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         string newJson = JsonSerializer.Serialize(newInfo, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(infoPath, newJson, Encoding.UTF8);
 
-        return nextPrerelease;
+        return (nextPrerelease, warning);
     }
 
-    public List<PrereleaseInfo> ListPrereleases()
+    public (List<PrereleaseInfo> Prereleases, string[] Warnings) ListPrereleases()
     {
         var config = LoadConfig();
         string prereleasesPath = Path.Combine(_basePath, config.PrereleasesDir);
         var result = new List<PrereleaseInfo>();
+        var warnings = new List<string>();
 
-        if (!Directory.Exists(prereleasesPath)) return result;
+        if (!Directory.Exists(prereleasesPath)) return (result, []);
 
         foreach (var dir in Directory.GetDirectories(prereleasesPath))
         {
@@ -674,12 +670,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                 }
                 catch (JsonException ex)
                 {
-                    Console.Error.WriteLine($"Warning: Skipping corrupt prerelease info.json ({infoPath}): {ex.Message}");
+                    warnings.Add($"Skipping corrupt prerelease info.json ({infoPath}): {ex.Message}");
                 }
             }
         }
 
-        return result.OrderByDescending(x => x.Timestamp).ToList();
+        return (result.OrderByDescending(x => x.Timestamp).ToList(), warnings.ToArray());
     }
 
     public string PromotePrerelease(string? branch = null, bool dryRun = false)

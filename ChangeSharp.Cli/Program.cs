@@ -374,7 +374,9 @@ class Program
                 var manager = new WorkspaceManager();
                 if (list)
                 {
-                    var listPrereleases = manager.ListPrereleases();
+                    var (listPrereleases, listWarnings) = manager.ListPrereleases();
+                    foreach (var w in listWarnings)
+                        Console.Error.WriteLine($"Warning: {w}");
                     return o.Ok(new { prereleases = listPrereleases.Select(p => new { p.Version, p.Branch, p.Timestamp }) },
                         () =>
                         {
@@ -398,7 +400,9 @@ class Program
                 }
                 else
                 {
-                    string prereleaseVersion = manager.CreatePrerelease(branch, channel, dryRun);
+                    var (prereleaseVersion, prereleaseWarning) = manager.CreatePrerelease(branch, channel, dryRun);
+                    if (prereleaseWarning != null)
+                        Console.Error.WriteLine($"Warning: {prereleaseWarning}");
                     return o.Ok(new { action = "create", version = prereleaseVersion, dryRun },
                         () => Console.WriteLine(dryRun
                             ? $"[Dry Run] Would create pre-release: {prereleaseVersion}"

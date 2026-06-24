@@ -48,11 +48,11 @@ public class PrereleaseTests
         var manager = new WorkspaceManager(_tempPath);
         manager.CreateFragment("Feature 1", "Added");
 
-        string v1 = manager.CreatePrerelease(branch: "feat/test");
+        var (v1, _) = manager.CreatePrerelease(branch: "feat/test");
         Assert.That(v1, Is.EqualTo("0.1.0-feat-test.1"));
 
         // Run again with same fragment
-        string v2 = manager.CreatePrerelease(branch: "feat/test");
+        var (v2, _) = manager.CreatePrerelease(branch: "feat/test");
         Assert.That(v2, Is.EqualTo("0.1.0-feat-test.2"));
     }
 
@@ -62,13 +62,13 @@ public class PrereleaseTests
         var manager = new WorkspaceManager(_tempPath);
         manager.CreateFragment("Bug fix", "Fixed");
 
-        string v1 = manager.CreatePrerelease(branch: "feat/test");
+        var (v1, _) = manager.CreatePrerelease(branch: "feat/test");
         Assert.That(v1, Is.EqualTo("0.0.1-feat-test.1"));
 
         // Add a feature to trigger Minor bump
         manager.CreateFragment("Feature", "Added");
         
-        string v2 = manager.CreatePrerelease(branch: "feat/test");
+        var (v2, _) = manager.CreatePrerelease(branch: "feat/test");
         Assert.That(v2, Is.EqualTo("0.1.0-feat-test.1"));
     }
 
@@ -77,7 +77,8 @@ public class PrereleaseTests
     {
         var manager = new WorkspaceManager(_tempPath);
         manager.CreateFragment("Feature 1", "Added");
-        manager.CreatePrerelease(branch: "feat/test");
+        var (vCreated, _) = manager.CreatePrerelease(branch: "feat/test");
+        Assert.That(vCreated, Is.EqualTo("0.1.0-feat-test.1"));
 
         string finalVersion = manager.PromotePrerelease(branch: "feat/test");
         Assert.That(finalVersion, Is.EqualTo("0.1.0"));
