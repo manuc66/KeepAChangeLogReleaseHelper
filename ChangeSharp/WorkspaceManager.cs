@@ -244,6 +244,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         return (maxImpact >= required, maxImpact, maxLevelName);
     }
 
+    public string[] ListFragmentFiles()
+    {
+        var config = LoadConfig();
+        string unreleasedPath = Path.Combine(_basePath, config.UnreleasedDir);
+        if (!Directory.Exists(unreleasedPath)) return [];
+
+        return Directory.GetFiles(unreleasedPath, "*.md")
+            .Select(f => Path.GetRelativePath(_basePath, f))
+            .ToArray();
+    }
+
+    public bool RemoveFragment(string relativePath)
+    {
+        string fullPath = Path.Combine(_basePath, relativePath);
+        if (!File.Exists(fullPath)) return false;
+
+        File.Delete(fullPath);
+        return true;
+    }
+
+    public int RemoveAllFragments()
+    {
+        var config = LoadConfig();
+        string unreleasedPath = Path.Combine(_basePath, config.UnreleasedDir);
+        if (!Directory.Exists(unreleasedPath)) return 0;
+
+        int count = 0;
+        foreach (var file in Directory.GetFiles(unreleasedPath, "*.md"))
+        {
+            File.Delete(file);
+            count++;
+        }
+        return count;
+    }
+
     public string CreateFragment(string message, string category)
     {
         var config = LoadConfig();

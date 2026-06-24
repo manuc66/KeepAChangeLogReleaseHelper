@@ -128,14 +128,16 @@ ChangeSharp.MCP    → AI/tooling adapter (Interface only)
     * **Fragment Gap Analysis**: Automatically suggest missing fragments based on uncommitted or unreleased code changes.
     * Summarize "What's New" from both a technical (Git) and user (Changelog) perspective.
 
-### Step 16: Syntactic API Validation (Safety Gate) (Priority 1)
+### Step 16: Syntactic API Validation (Safety Gate) (Completed)
 * **Goal**: Ensure the promised SemVer impact in fragments matches the reality of the code changes.
-* **Actions**:
-    * Integrate with API surface tracking tools (e.g., `PublicApiGenerator` for .NET, Swagger diff for APIs).
-    * **Cross-verification**: Fail the `validate` or `release` command if a fragment says `### Fixed` (Patch) but a public method signature was deleted (Major).
-    * Provide "Fix-it" suggestions: "You've made a breaking change, please move this fragment to 'Breaking Changes' or 'Removed'."
-    * **Note**: This is a **syntactic** gate. It detects signature changes but cannot guarantee **semantic** behavior (e.g., a logic change in a method body that keeps the same signature).
-* See [[Features/SyntacticValidation|Syntactic Validation Safety Gate]].
+* **Approach**: Provide a `--api-min-level` flag on `validate` and `release`. The CI pipeline runs an API diff tool of its choice (e.g., `PublicApiAnalyzers`, Swagger diff) and passes the minimum impact level to ChangeSharp. ChangeSharp compares it against the fragments' declared categories and fails if they are too low.
+* **CLI**:
+  ```
+  changesharp validate --api-min-level minor   # PR gate
+  changesharp release --api-min-level major    # release gate
+  ```
+* **Full decoupling**: ChangeSharp does not perform the diff — the team owns the diff tool. ChangeSharp only enforces the policy.
+* See [[Features/ApiSurfaceGate|API Surface Gate Specification]].
 
 ### Step 17: Multi-Team Monorepo Scoping (Priority 2)
 * **Goal**: Support large-scale enterprise monorepos with independent team policies.

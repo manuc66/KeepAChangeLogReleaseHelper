@@ -6,7 +6,7 @@ To avoid the pitfalls of using *Keep a Changelog* categories directly for SemVer
 | :--- | :--- | :--- |
 | `### Breaking Changes` | ⬆️ **Major** | Explicit breaking changes. Kept as a separate section in the fragment and compiled into the final release notes for clear visibility. |
 | `### Removed` | ⬆️ **Major** | Removing a documented public feature is a breaking change. |
-| `### Changed` | ⬆️ **Major** | Modifications to existing features. **Note**: By default, ChangeSharp treats "Changed" as a Major bump to be conservative. This can be overridden to "Minor" in `changesharp.json`. |
+| `### Changed` | ➡️ **Minor** | Modifications to existing features. **Note**: By default, ChangeSharp treats "Changed" as a Minor bump to avoid accidental Major bumps. Override to "Major" in `changesharp.json` if needed. |
 | `### Added` | ➡️ **Minor** | New backward-compatible features. |
 | `### Deprecated` | ➡️ **Minor** | Warnings about future removals. |
 | `### Fixed` | 🛞 **Patch** | Bug fixes. |

@@ -43,9 +43,14 @@ public class MSBuildVersionHandler : IVersionPropagationHandler
                 }
             }
         }
+        else if (versionElements.Any())
+        {
+            // Prefer <Version> — it takes precedence and avoids breaking MinVer-style VersionPrefix flows
+            foreach (var el in versionElements) el.Value = nextVersion;
+        }
         else
         {
-            foreach (var el in versionElements) el.Value = nextVersion;
+            // Fallback to <VersionPrefix> if only that exists
             foreach (var el in versionPrefixElements) el.Value = nextVersion;
         }
 

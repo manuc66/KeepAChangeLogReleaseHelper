@@ -433,4 +433,81 @@ public class WorkspaceManagerTests
 
         Assert.Throws<ArgumentException>(() => manager.CheckApiMinLevel("foo"));
     }
+
+    [Test]
+    public void ListFragmentFiles_EmptyDir_ReturnsEmpty()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+
+        var files = manager.ListFragmentFiles();
+
+        Assert.That(files, Is.Empty);
+    }
+
+    [Test]
+    public void ListFragmentFiles_WithFragments_ReturnsRelativePaths()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        manager.CreateFragment("Feature A", "Added");
+        manager.CreateFragment("Fix B", "Fixed");
+
+        var files = manager.ListFragmentFiles();
+
+        Assert.That(files.Length, Is.EqualTo(2));
+        Assert.That(files.All(f => f.StartsWith(".changesharp/unreleased/")), Is.True);
+    }
+
+    [Test]
+    public void RemoveFragment_RemovesByRelativePath()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        string path = manager.CreateFragment("Feature A", "Added");
+
+        string relativePath = Path.GetRelativePath(_testDir, path);
+        bool removed = manager.RemoveFragment(relativePath);
+
+        Assert.That(removed, Is.True);
+        Assert.That(File.Exists(path), Is.False);
+        Assert.That(manager.ListFragmentFiles(), Is.Empty);
+    }
+
+    [Test]
+    public void RemoveFragment_MissingFile_ReturnsFalse()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+
+        bool removed = manager.RemoveFragment(".changesharp/unreleased/nonexistent.md");
+
+        Assert.That(removed, Is.False);
+    }
+
+    [Test]
+    public void RemoveAllFragments_RemovesAll()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        manager.CreateFragment("Feature A", "Added");
+        manager.CreateFragment("Feature B", "Added");
+        manager.CreateFragment("Fix C", "Fixed");
+
+        int count = manager.RemoveAllFragments();
+
+        Assert.That(count, Is.EqualTo(3));
+        Assert.That(manager.ListFragmentFiles(), Is.Empty);
+    }
+
+    [Test]
+    public void RemoveAllFragments_EmptyDir_ReturnsZero()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+
+        int count = manager.RemoveAllFragments();
+
+        Assert.That(count, Is.EqualTo(0));
+    }
 }

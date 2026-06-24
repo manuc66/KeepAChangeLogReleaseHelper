@@ -1,8 +1,13 @@
 name: Release
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run only (preview without making changes)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
 
 jobs:
   release:
@@ -16,15 +21,19 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x' # Use latest stable
+          dotnet-version: '10.0.x'
 
       - name: Install ChangeSharp
         run: dotnet tool install --global ChangeSharp.Cli
 
-      - name: Validate Release (Dry Run)
+      - name: Validate Release
+        run: changesharp validate --require-fragments
+
+      - name: Dry Run Preview
         run: changesharp release --dry-run
 
       - name: Perform Release
+        if: inputs.dry_run == 'false'
         run: |
           NEXT_VERSION=$(changesharp status --next-only)
           changesharp release

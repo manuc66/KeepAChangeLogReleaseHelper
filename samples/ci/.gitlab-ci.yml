@@ -4,7 +4,7 @@ stages:
 
 validate_fragments:
   stage: validate
-  image: mcr.microsoft.com/dotnet/sdk:8.0
+  image: mcr.microsoft.com/dotnet/sdk:10.0
   script:
     - dotnet tool install --global ChangeSharp.Cli
     - export PATH="$PATH:$HOME/.dotnet/tools"
@@ -14,7 +14,7 @@ validate_fragments:
 
 perform_release:
   stage: release
-  image: mcr.microsoft.com/dotnet/sdk:8.0
+  image: mcr.microsoft.com/dotnet/sdk:10.0
   script:
     - dotnet tool install --global ChangeSharp.Cli
     - export PATH="$PATH:$HOME/.dotnet/tools"

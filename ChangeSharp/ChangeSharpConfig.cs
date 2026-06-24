@@ -10,6 +10,14 @@ public class ChangeSharpConfig
     public PreReleaseConfig PreRelease { get; set; } = new();
     public SemverPolicyConfig SemverPolicy { get; set; } = new();
     public FragmentNamingConfig FragmentNaming { get; set; } = new();
+    public SecurityConfig Security { get; set; } = new();
+}
+
+public class SecurityConfig
+{
+    public bool RequireApproval { get; set; } = false;
+    public bool AllowAgentRelease { get; set; } = false;
+    public bool DryRunByDefault { get; set; } = false;
 }
 
 public class FragmentNamingConfig

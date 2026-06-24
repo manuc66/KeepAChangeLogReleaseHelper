@@ -182,7 +182,32 @@ class Program
 
                 case "perform_release":
                     bool dryRun = args?["dryRun"]?.GetValue<bool>() ?? false;
-                    
+
+                    if (!dryRun)
+                    {
+                        // Check Security config from changesharp.json
+                        var config = Manager.LoadConfig();
+                        if (config.Security.RequireApproval || config.Security.AllowAgentRelease == false)
+                        {
+                            string? envAllow = Environment.GetEnvironmentVariable("CHANGESHARP_ALLOW_UNSAFE_RELEASE");
+                            if (envAllow != "true")
+                            {
+                                return new
+                                {
+                                    content = new[]
+                                    {
+                                        new
+                                        {
+                                            type = "text",
+                                            text = "Release blocked by security policy. Set CHANGESHARP_ALLOW_UNSAFE_RELEASE=true to proceed. Use dryRun: true for a preview."
+                                        }
+                                    },
+                                    isError = true
+                                };
+                            }
+                        }
+                    }
+
                     try
                     {
                         string version = Manager.Release(DateTime.UtcNow, dryRun);
