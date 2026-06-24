@@ -88,6 +88,40 @@ public class VersionPropagationTests
     }
 
     [Test]
+    public void JsonHandler_MissingIntermediatePath_ReturnsWarning()
+    {
+        string jsonPath = Path.Combine(_tempPath, "config.json");
+        File.WriteAllText(jsonPath, "{\"existing\": {\"version\": \"1.0.0\"}}");
+
+        var handler = new JsonVersionHandler();
+        var target = new VersionTargetConfig { Path = "config.json", JsonPath = "nonexistent.deep.version" };
+
+        string? warning = handler.UpdateVersion(_tempPath, target, "2.0.0");
+
+        Assert.That(warning, Is.Not.Null);
+        Assert.That(warning, Does.Contain("nonexistent"));
+
+        // The file should still be updated
+        string updated = File.ReadAllText(jsonPath);
+        var node = JsonNode.Parse(updated);
+        Assert.That(node!["nonexistent"]?["deep"]?["version"]?.ToString(), Is.EqualTo("2.0.0"));
+    }
+
+    [Test]
+    public void JsonHandler_ExistingPath_ReturnsNull()
+    {
+        string jsonPath = Path.Combine(_tempPath, "config.json");
+        File.WriteAllText(jsonPath, "{\"version\": \"1.0.0\"}");
+
+        var handler = new JsonVersionHandler();
+        var target = new VersionTargetConfig { Path = "config.json", JsonPath = "version" };
+
+        string? warning = handler.UpdateVersion(_tempPath, target, "2.0.0");
+
+        Assert.That(warning, Is.Null);
+    }
+
+    [Test]
     public void JsonHandler_UpdatesCustomProperty()
     {
         string jsonPath = Path.Combine(_tempPath, "config.json");

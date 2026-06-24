@@ -25,27 +25,31 @@ public class JsonVersionHandler : IVersionPropagationHandler
         if (node == null) return $"Failed to parse JSON: {target.Path}";
 
         string path = target.JsonPath ?? "version";
-        SetNodeByPath(node, path, nextVersion);
+        string? warning = SetNodeByPath(node, path, nextVersion);
 
         var options = new JsonSerializerOptions { WriteIndented = true };
         File.WriteAllText(fullPath, node.ToJsonString(options));
-        return null;
+        return warning;
     }
 
-    private static void SetNodeByPath(JsonNode root, string path, string value)
+    private static string? SetNodeByPath(JsonNode root, string path, string value)
     {
         // Strip optional "$." prefix (JSONPath-like)
         var segments = path.StartsWith("$.") ? path[2..].Split('.') : path.Split('.');
 
+        string? warning = null;
         JsonNode current = root;
         for (int i = 0; i < segments.Length - 1; i++)
         {
             var seg = segments[i];
             var obj = current as JsonObject;
-            if (obj == null) return;
+            if (obj == null) return $"JSON path '{path}' could not be applied: intermediate segment '{seg}' is not an object.";
 
             if (!obj.ContainsKey(seg))
+            {
                 obj[seg] = new JsonObject();
+                warning ??= $"JSON path '{path}' created missing intermediate node(s).";
+            }
 
             current = obj[seg]!;
         }
@@ -55,5 +59,7 @@ public class JsonVersionHandler : IVersionPropagationHandler
         {
             targetObj[last] = value;
         }
+
+        return warning;
     }
 }
