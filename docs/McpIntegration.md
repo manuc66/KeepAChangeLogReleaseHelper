@@ -13,6 +13,18 @@ The MCP server exposes the following tools:
 
 > **Security Warning**: In enterprise environments, AI agents should NOT be allowed to perform a release without human approval. It is highly recommended to use the `--dry-run` flag or implement a mandatory approval gate in your CI/CD pipeline before the final release is pushed.
 
+### Security Configuration
+
+The MCP server enforces a two-layer security model for the `perform_release` tool:
+
+| Setting | Default | Description |
+|---|---|---|
+| `Security.AllowAgentRelease` | `true` | Set to `false` in `changesharp.json` to block all MCP agent releases. |
+| `Security.RequireApproval` | `false` | Set to `true` in `changesharp.json` to require `CHANGESHARP_ALLOW_UNSAFE_RELEASE=true` env var. |
+| `CHANGESHARP_ALLOW_UNSAFE_RELEASE` | — | Environment variable that must be set to `true` when `RequireApproval` is enabled or `AllowAgentRelease` is `false`. |
+
+When either `AllowAgentRelease: false` or `RequireApproval: true` is set, the agent must set `CHANGESHARP_ALLOW_UNSAFE_RELEASE=true` in its environment to proceed with a release. Dry-run previews are always allowed.
+
 ## Configuration
 
 To use the ChangeSharp MCP server, you need to add it to your AI agent's configuration.

@@ -215,6 +215,13 @@ public class WorkspaceManagerTests
     }
 
     [Test]
+    public void SecurityConfig_AllowAgentRelease_DefaultsToTrue()
+    {
+        var config = new ChangeSharpConfig();
+        Assert.That(config.Security.AllowAgentRelease, Is.True, "MCP agent releases should be allowed by default (env var CHANGESHARP_ALLOW_UNSAFE_RELEASE is the primary gate).");
+    }
+
+    [Test]
     public void Initialize_AutoDiscoversTargets_Works()
     {
         // Setup dummy project files

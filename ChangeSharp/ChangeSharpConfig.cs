@@ -16,7 +16,7 @@ public class ChangeSharpConfig
 public class SecurityConfig
 {
     public bool RequireApproval { get; set; } = false;
-    public bool AllowAgentRelease { get; set; } = false;
+    public bool AllowAgentRelease { get; set; } = true;
     public bool DryRunByDefault { get; set; } = false;
 }
 
