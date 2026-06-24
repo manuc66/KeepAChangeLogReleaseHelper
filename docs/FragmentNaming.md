@@ -5,21 +5,21 @@ The convention for naming unreleased fragment files is designed for readability,
 ## Standard Format
 
 Fragments follow this pattern:
-`YYYYMMDD-HHmmss-[slug].md`
+`YYYYMMDDHHmmssfff-[slug].md`
 
-Example: `20250623-143005-add-mcp-server.md`
+Example: `20260624143005123-add-mcp-server.md`
 
 ### Why this format?
 1. **Chronological Sorting**: Timestamps ensure that files are listed in the order they were created when looking at the directory.
-2. **Collision Avoidance**: The inclusion of hours, minutes, and seconds makes it extremely unlikely for two fragments to have the same name, even in multi-developer environments.
+2. **Collision Avoidance**: Millisecond precision (`fff`) makes collisions extremely unlikely, even in multi-developer environments.
 3. **Contextual Readability**: The `slug` (derived from the change message) allows developers to see what a fragment contains without opening it.
 
 ## Branch-based Naming (Optional)
 
-In some workflows, using the Git branch name as a slug can be useful:
-`YYYYMMDD-[branch-name].md`
+When `IncludeBranchName` is enabled (default), the branch slug is included:
+`YYYYMMDDHHmmssfff-[branch]-[slug].md`
 
-`changesharp new` will automatically generate a slug from the provided message if no specific name is given.
+Example: `20260624143005123-feature-add-payment-api-add-mcp-server.md`
 
 ## Slug Generation Rules
 * Convert to lowercase.

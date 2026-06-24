@@ -30,8 +30,8 @@ The base version continues to be calculated from the unreleased changesets.
 This ensures that pre-release versions remain fully aligned with the final release version that will eventually be published.
 
 ## Chronological Ordering
-Changesets should be created using timestamp-based filenames:
-`20260623-143501-add-payment-api.md` or `20260623143501-add-payment-api.md`.
+Changesets use timestamp-based filenames with millisecond precision:
+`20260624143005123-add-payment-api.md`.
 
 This allows deterministic ordering by filename:
 ```csharp
@@ -89,8 +89,8 @@ Example: `1.4.0-feature-payment-api.3` → `1.4.0`
 
 The final version is promoted without recalculating the version number.
 
-## Release Channels (Future Enhancement)
-Support standard SemVer release channels:
+## Release Channels
+Prepend a channel label to the pre-release identifier:
 * `changesharp prerelease --channel alpha`
 * `changesharp prerelease --channel beta`
 * `changesharp prerelease --channel rc`

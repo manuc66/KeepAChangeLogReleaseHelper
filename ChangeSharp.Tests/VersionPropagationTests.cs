@@ -94,12 +94,31 @@ public class VersionPropagationTests
         File.WriteAllText(txtPath, "export const VERSION = '1.0.0';");
 
         var handler = new RegexVersionHandler();
-        // Use lookbehind to only replace the version part
         var target = new VersionTargetConfig { Path = "version.txt", Regex = "(?<=VERSION = ')(.*)(?=')" };
         
         handler.UpdateVersion(_tempPath, target, "1.1.0");
 
         string updated = File.ReadAllText(txtPath);
         Assert.That(updated, Is.EqualTo("export const VERSION = '1.1.0';"));
+    }
+
+    [Test]
+    public void RegexHandler_WithReplacement_USesVersionPlaceholder()
+    {
+        string txtPath = Path.Combine(_tempPath, "app.cs");
+        File.WriteAllText(txtPath, "[assembly: AssemblyVersion(\"1.0.0\")]");
+
+        var handler = new RegexVersionHandler();
+        var target = new VersionTargetConfig
+        {
+            Path = "app.cs",
+            Regex = "AssemblyVersion\\(\".*\"\\)",
+            Replacement = "AssemblyVersion(\"$VERSION\")"
+        };
+
+        handler.UpdateVersion(_tempPath, target, "2.0.0");
+
+        string updated = File.ReadAllText(txtPath);
+        Assert.That(updated, Is.EqualTo("[assembly: AssemblyVersion(\"2.0.0\")]"));
     }
 }

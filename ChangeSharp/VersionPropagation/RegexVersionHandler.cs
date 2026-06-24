@@ -20,7 +20,13 @@ public class RegexVersionHandler : IVersionPropagationHandler
             return $"Regex target '{target.Path}' has no regex pattern configured.";
 
         string content = File.ReadAllText(fullPath);
-        string updated = Regex.Replace(content, target.Regex, nextVersion);
+
+        string updated = Regex.Replace(content, target.Regex, m =>
+        {
+            string replacement = target.Replacement ?? "$VERSION";
+            return replacement.Replace("$VERSION", nextVersion);
+        });
+
         File.WriteAllText(fullPath, updated);
         return null;
     }
