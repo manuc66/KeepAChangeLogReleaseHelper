@@ -122,6 +122,37 @@ public class VersionPropagationTests
     }
 
     [Test]
+    public void JsonHandler_UpdatesNestedProperty()
+    {
+        string jsonPath = Path.Combine(_tempPath, "manifest.json");
+        File.WriteAllText(jsonPath, "{\"meta\": {\"version\": \"1.0.0\"}}");
+
+        var handler = new JsonVersionHandler();
+        var target = new VersionTargetConfig { Path = "manifest.json", JsonPath = "$.meta.version" };
+
+        handler.UpdateVersion(_tempPath, target, "1.1.0");
+
+        string updated = File.ReadAllText(jsonPath);
+        var node = JsonNode.Parse(updated);
+        Assert.That(node!["meta"]!["version"]!.ToString(), Is.EqualTo("1.1.0"));
+    }
+
+    [Test]
+    public void RegexHandler_NullRegex_ReturnsWarning()
+    {
+        string txtPath = Path.Combine(_tempPath, "version.txt");
+        File.WriteAllText(txtPath, "some content");
+
+        var handler = new RegexVersionHandler();
+        var target = new VersionTargetConfig { Path = "version.txt", Type = "regex" };
+
+        string? warning = handler.UpdateVersion(_tempPath, target, "1.1.0");
+
+        Assert.That(warning, Is.Not.Null);
+        Assert.That(warning, Does.Contain("no regex pattern"));
+    }
+
+    [Test]
     public void JsonHandler_UpdatesCustomProperty()
     {
         string jsonPath = Path.Combine(_tempPath, "config.json");

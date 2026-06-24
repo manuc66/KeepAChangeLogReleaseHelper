@@ -27,6 +27,15 @@ public class ChangelogParserTests
     }
 
     [Test]
+    public void Parse_NoHeadings_ReturnsEmptyChangeSet()
+    {
+        var fragment = "Some plain text without any markdown headings.";
+        var parser = new ChangelogParser();
+        var result = parser.Parse(fragment);
+        Assert.That(result.IsEmpty(), Is.True);
+    }
+
+    [Test]
     public void Parse_PreservesContentWithInlineHash()
     {
         var fragment = @"### Fixed
