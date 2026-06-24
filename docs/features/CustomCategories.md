@@ -8,16 +8,19 @@ Custom categories are defined in the `changesharp.json` configuration file under
 
 ### Example Configuration
 
+The example below overrides the default `Changed → Minor` to `Changed → Major` (a common choice for strict SemVer projects) and adds two custom categories:
+
 ```json
 {
   "SemverPolicy": {
-    "Impacts": {
-      "Added": "Minor",
-      "Fixed": "Patch",
-      "Security": "Patch",
-      "Deprecated": "Minor",
+    "Mappings": {
+      "Breaking Changes": "Major",
       "Removed": "Major",
       "Changed": "Major",
+      "Added": "Minor",
+      "Deprecated": "Minor",
+      "Fixed": "Patch",
+      "Security": "Patch",
       "Maintenance": "None",
       "Documentation": "None"
     }
@@ -42,7 +45,7 @@ The highest impact from all fragments is selected to determine the final bump.
 If no custom mappings are provided, ChangeSharp uses the following defaults (adhering to a conservative interpretation of SemVer):
 
 - **Added**: Minor
-- **Changed**: Major (Conservative default)
+- **Changed**: Minor
 - **Deprecated**: Minor
 - **Removed**: Major
 - **Fixed**: Patch
