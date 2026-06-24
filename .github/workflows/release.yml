@@ -1,8 +1,8 @@
 name: Release
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   release:
@@ -16,10 +16,13 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x' # Use latest stable
+          dotnet-version: 10.0.x
 
-      - name: Install ChangeSharp
-        run: dotnet tool install --global ChangeSharp.Cli
+      - name: Pack ChangeSharp CLI
+        run: dotnet pack ChangeSharp.Cli/ChangeSharp.Cli.csproj -o nupkg --nologo
+
+      - name: Install ChangeSharp CLI
+        run: dotnet tool install --global --add-source ./nupkg ChangeSharp.Cli
 
       - name: Validate Release (Dry Run)
         run: changesharp release --dry-run
@@ -28,7 +31,7 @@ jobs:
         run: |
           NEXT_VERSION=$(changesharp status --next-only)
           changesharp release
-          
+
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add .
