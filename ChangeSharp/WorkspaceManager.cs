@@ -469,14 +469,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             }
         }
 
-        // 4. Cleanup processed fragments
+        // 4. Propagate version to targets FIRST (before cleanup, so a failure is recoverable)
+        warnings.AddRange(PropagateVersion(config, nextVersion));
+
+        // 5. Cleanup processed fragments (only after successful propagation)
         foreach (var file in fragments)
         {
             File.Delete(file);
         }
-
-        // 5. Propagate version to targets
-        warnings.AddRange(PropagateVersion(config, nextVersion));
 
         return (nextVersion, warnings.ToArray());
     }
