@@ -35,18 +35,24 @@ Impact levels supported: `Major`, `Minor`, `Patch`, `None`.
 
 ## 🛡️ Automated Verification (Safety Gates)
 
-Human error is the main cause of SemVer violations (e.g., forgetting that a change is breaking). ChangeSharp aims to provide an automated **Safety Gate** to cross-verify fragments against actual code changes.
+Human error is the main cause of SemVer violations. ChangeSharp provides a **Safety Gate** via the `--api-min-level` flag to cross-verify fragments against actual code changes.
 
 ### How it works
-During the `validate` or `release` process, ChangeSharp can be configured to run external tools that analyze the API surface:
+The CI pipeline runs an API diff tool of its choice (e.g., `PublicApiAnalyzers`, Swagger diff) and passes the minimum impact level to ChangeSharp:
 
-1.  **Extract Expected Impact**: ChangeSharp reads the pending fragments (e.g., `### Added` implies Minor).
-2.  **Analyze Real Impact**: An external analyzer (like `PublicApiGenerator` or a Swagger diff tool) compares the current code against the last released version.
-3.  **Cross-Check**:
-    *   If Real Impact > Expected Impact (e.g., Code says Major, Fragment says Patch) -> **FAIL** with a clear error.
-    *   If Real Impact < Expected Impact -> **WARN** (the user might be over-bumping intentionally).
+```bash
+changesharp validate --api-min-level minor   # PR gate
+changesharp release --api-min-level major    # release gate
+```
+
+ChangeSharp compares the required level against the fragments' declared categories:
+1. **Extract Expected Impact**: ChangeSharp reads the pending fragments (e.g., `### Added` implies Minor).
+2. **Compare**: If the fragments' highest impact is below `--api-min-level`, validation fails.
+3. **Fail or Warn**: Use `--api-min-level-warn` to warn instead of failing.
 
 ### Integration Examples
-*   **Web APIs**: Compare Swagger/OpenAPI schemas.
+*   **Web APIs**: Compare Swagger/OpenAPI schemas before `changesharp validate --api-min-level`.
 *   **.NET Libraries**: Use `PublicApiGenerator` to detect signature changes.
 *   **CLI Tools**: Compare help output or command schemas.
+
+ChangeSharp does **not** perform the API diff itself — it only enforces the policy. See [ApiSurfaceGate](features/ApiSurfaceGate.md) for details.
