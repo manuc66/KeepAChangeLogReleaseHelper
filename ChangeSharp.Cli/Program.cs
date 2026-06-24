@@ -248,20 +248,20 @@ class Program
                     }
                 }
 
-                // API min level check
+                if (errorCount > 0)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"{errorCount} fragment(s) failed validation.");
+                    return ExitCodeValidationError;
+                }
+
+                // API min level check (after format validation)
                 string? apiMinLevel = parseResult.GetValue(apiMinLevelOption);
                 if (apiMinLevel != null)
                 {
                     bool warnOnly = parseResult.GetValue(apiMinLevelWarnOption);
                     int? apiResult = CheckApiMinLevel(manager, apiMinLevel, warnOnly);
                     if (apiResult.HasValue) return apiResult.Value;
-                }
-
-                if (errorCount > 0)
-                {
-                    Console.WriteLine();
-                    Console.WriteLine($"{errorCount} fragment(s) failed validation.");
-                    return ExitCodeValidationError;
                 }
 
                 Console.WriteLine();

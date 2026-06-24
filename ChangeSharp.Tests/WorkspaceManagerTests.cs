@@ -414,4 +414,23 @@ public class WorkspaceManagerTests
         var (majorPass, _, _) = manager.CheckApiMinLevel("major");
         Assert.That(majorPass, Is.False);
     }
+
+    [Test]
+    public void CheckApiMinLevel_InvalidLevel_Throws()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+        manager.CreateFragment("Fix a bug", "Fixed");
+
+        Assert.Throws<ArgumentException>(() => manager.CheckApiMinLevel("foo"));
+    }
+
+    [Test]
+    public void CheckApiMinLevel_InvalidLevel_ThrowsEvenWithoutFragments()
+    {
+        var manager = new WorkspaceManager(_testDir);
+        manager.Initialize();
+
+        Assert.Throws<ArgumentException>(() => manager.CheckApiMinLevel("foo"));
+    }
 }

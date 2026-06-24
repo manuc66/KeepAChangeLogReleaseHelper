@@ -214,6 +214,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
     public (bool Pass, int MaxImpact, string MaxLevelName) CheckApiMinLevel(string minLevel)
     {
+        int required = NextVersionComputer.ParseImpact(minLevel);
+        if (required == 0)
+            throw new ArgumentException($"Invalid API level '{minLevel}'. Valid values: patch, minor, major.", nameof(minLevel));
+
         var config = LoadConfig();
         GetStatus(out int count, out ChangeSet merged, out _, out _);
 
@@ -237,7 +241,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             }
         }
 
-        int required = NextVersionComputer.ParseImpact(minLevel);
         return (maxImpact >= required, maxImpact, maxLevelName);
     }
 
